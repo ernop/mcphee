@@ -1,0 +1,127 @@
+/* McPhee overlay — see mcphee.js for the drop-in contract.
+   The backdrop mirrors the textarea's text invisibly; only mark backgrounds
+   show through the (now transparent) textarea. */
+
+.mcphee-host {
+  position: relative;
+  display: block;
+  width: 100%;
+}
+
+.mcphee-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  /* width/height are set from the textarea's client box in mcphee.js so a
+     vertical scrollbar can't skew the wrap width. */
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  color: transparent;
+  border-style: solid;
+  border-color: transparent;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.mcphee-textarea {
+  position: relative;
+  z-index: 1;
+  background: transparent !important;
+  width: 100%;
+}
+
+.mcphee-backdrop mark {
+  color: transparent;
+  border-radius: 3px;
+}
+
+/* Misspelled non-real word: light red/pink block background. */
+.mcphee-mark-misspelled { background: #ffd6dc; }
+
+/* Unknown word (Capitalized / ALLCAPS / camelCase, not in dictionary):
+   light blue block background. */
+.mcphee-mark-unknown { background: #d7e6ff; }
+
+/* An illegitimate extra-space run: one joined yellow rectangle with a grey
+   outline and no internal divisions. Legitimate sentence-separator double
+   spaces and line-leading indentation are never marked. */
+.mcphee-mark-doublespace {
+  background: #ffe98a;
+  box-shadow: inset 0 0 0 1px #6b7280;
+  border-radius: 2px;
+}
+
+/* Lowercase sentence-start dictionary word (strict profile only). */
+.mcphee-mark-capitalization { background: #ffe1c2; }
+
+/* Missing terminal punctuation (strict profile only): last character boxed. */
+.mcphee-mark-punctuation {
+  background: #ffe1c2;
+  box-shadow: inset 0 0 0 1px #d97706;
+  border-radius: 2px;
+}
+
+/* Echo: the same content word reused nearby — both occurrences lavender. */
+.mcphee-mark-echo { background: #e6d9f7; }
+
+/* Obscure repeat: a rare word used more than once in the text — light green. */
+.mcphee-mark-obscure { background: #d5efd5; }
+
+/* ---------- issues panel (attachPanel) ---------- */
+
+.mcphee-panel {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.mcphee-panel-header {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.mcphee-panel-item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Hovering a row scrolls the textarea to the issue's location. */
+.mcphee-panel-item:hover { background: #f3f7fc; }
+
+.mcphee-panel-word { font-weight: 600; }
+.mcphee-panel-word-misspelled { background: #ffd6dc; padding: 0 4px; border-radius: 3px; }
+.mcphee-panel-word-unknown { background: #d7e6ff; padding: 0 4px; border-radius: 3px; }
+.mcphee-panel-word-capitalization { background: #ffe1c2; padding: 0 4px; border-radius: 3px; }
+.mcphee-panel-word-doublespace { background: #ffe98a; padding: 0 4px; border-radius: 3px; }
+.mcphee-panel-word-echo { background: #e6d9f7; padding: 0 4px; border-radius: 3px; }
+.mcphee-panel-word-obscure { background: #d5efd5; padding: 0 4px; border-radius: 3px; }
+
+.mcphee-panel-note { color: #92400e; }
+
+.mcphee-panel-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 3px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.mcphee-panel-btn:hover { background: #f3f4f6; }
+.mcphee-panel-adddict { border-style: dashed; }
+
+/* "Move cursor here": selects the issue's text in the textarea. */
+.mcphee-panel-select { color: #2563eb; border-color: #93c5fd; }
+.mcphee-panel-select:hover { background: #eff6ff; }
+
+.mcphee-panel-dictcount {
+  margin-top: 6px;
+  color: #6b7280;
+  font-size: 12px;
+}
