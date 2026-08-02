@@ -111,6 +111,11 @@ sw.importWords(oldWordArray);  // union-merge (migration / future remote sync)
 sw.analyze("The leopard slept. Later the leopard woke.");
 // -> two {kind:"echo", norm:"leopard", distance:4} issues (both occurrences)
 sw.ignoreRepeat("leopard");    // session-scoped "this repetition is deliberate"
+
+// Kedit-All primitives for concordance / deep-look UIs:
+sw.concordance(text, "but");   // every occurrence + word-gaps between them
+sw.repetitionReport(text);     // all repeated words ranked by bunching
+                               // surprise; rare-word repeats pinned on top
 ```
 
 ## Repetition detectors (the McPhee rules)

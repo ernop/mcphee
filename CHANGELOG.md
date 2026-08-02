@@ -1,5 +1,20 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 2.1.0 — 2026-08-02
+
+The Kedit `All` primitives, for building deep-look/concordance UIs:
+
+- `concordance(text, word)` — every occurrence of one chosen word (case,
+  possessive, plural folded) with offsets, word indexes, and the gaps
+  between successive occurrences. No thresholds; judgment stays with the
+  author, as in Kedit.
+- `repetitionReport(text, { minLength, limit })` — the automatic All: every
+  repeated word ranked by bunching surprise (expected gap N/k over closest
+  actual gap), so bunched ordinary words surface and "the" never does. Rare
+  words (>= obscureRank or unranked) sort above everything — one appearance
+  per piece is the rule. Personal-dictionary/extraWords/dismissed words
+  excluded.
+
 ## 2.0.0 — 2026-08-02
 
 Renamed SpellWell → **McPhee**, for John McPhee, who ran Kedit's `All`

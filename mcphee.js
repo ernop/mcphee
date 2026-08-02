@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "2.0.0";
+  var VERSION = "2.1.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -470,6 +470,86 @@ var McPhee = (function () {
         });
       });
     }
+  };
+
+  // Kedit's All command: every occurrence of one chosen word (case,
+  // possessive, and plural folded) with the word-distances between
+  // successive occurrences. No thresholds, no judgment — that's the
+  // author's. Returns { word, key, count, totalWords, occurrences:
+  // [{ value, start, end, wordIndex }], gaps }.
+  Checker.prototype.concordance = function (text, word) {
+    var target = pluralKey(normWord(String(word)));
+    var occurrences = [];
+    var total = 0;
+    WORD_RE.lastIndex = 0;
+    var m;
+    while ((m = WORD_RE.exec(text)) !== null) {
+      if (pluralKey(normWord(m[0])) === target) {
+        occurrences.push({ value: m[0], start: m.index, end: m.index + m[0].length, wordIndex: total });
+      }
+      total++;
+    }
+    var gaps = [];
+    for (var i = 1; i < occurrences.length; i++) {
+      gaps.push(occurrences[i].wordIndex - occurrences[i - 1].wordIndex);
+    }
+    return { word: String(word), key: target, count: occurrences.length, totalWords: total, occurrences: occurrences, gaps: gaps };
+  };
+
+  // The automatic All: every repeated word ranked by how suspicious its
+  // repetition is. A word used k times in an N-word text has an expected
+  // gap of N/k if evenly spread; score = expectedGap / closest actual gap,
+  // so two "however" five words apart in a long text scores high while
+  // "the" never surfaces (its expected gap is already tiny). Rare words
+  // (rank >= obscureRank, or unranked) sort above everything — one
+  // appearance per piece is the rule, distance irrelevant. Personal
+  // dictionary, extraWords, and session-dismissed words are excluded, as in
+  // the detectors. opts: { minLength: 3, limit: 25 }.
+  Checker.prototype.repetitionReport = function (text, opts) {
+    opts = opts || {};
+    var minLength = opts.minLength || 3;
+    var limit = opts.limit || 25;
+    var byKey = new Map();
+    var total = 0;
+    WORD_RE.lastIndex = 0;
+    var m;
+    while ((m = WORD_RE.exec(text)) !== null) {
+      var norm = normWord(m[0]);
+      if (norm.length >= minLength && !this.customWords.has(norm) && !this.extraWords.has(norm)) {
+        var key = pluralKey(norm);
+        if (!this.ignoredRepeats.has(key)) {
+          var entry = byKey.get(key);
+          if (!entry) { entry = { value: m[0], indexes: [], firstStart: m.index }; byKey.set(key, entry); }
+          entry.indexes.push(total);
+        }
+      }
+      total++;
+    }
+    var rows = [];
+    var self = this;
+    byKey.forEach(function (entry, key) {
+      var k = entry.indexes.length;
+      if (k < 2) return;
+      var minGap = Infinity;
+      for (var i = 1; i < k; i++) {
+        minGap = Math.min(minGap, entry.indexes[i] - entry.indexes[i - 1]);
+      }
+      var expectedGap = total / k;
+      var rank = self.rankOf(key);
+      var rare = rank === null ? false : rank >= self.obscureRank;
+      rows.push({
+        value: entry.value, key: key, count: k,
+        minGap: minGap, expectedGap: Math.round(expectedGap),
+        rank: rank === Infinity ? null : rank, rare: rare,
+        score: expectedGap / Math.max(minGap, 1),
+        firstStart: entry.firstStart,
+      });
+    });
+    rows.sort(function (a, b) {
+      if (a.rare !== b.rare) return a.rare ? -1 : 1;
+      return b.score - a.score;
+    });
+    return { totalWords: total, rows: rows.slice(0, limit) };
   };
 
   // Picks a correction for a misspelled word, or null when nothing is safe to
