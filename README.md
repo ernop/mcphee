@@ -98,7 +98,7 @@ const fix2 = sw.localFix(textarea.value);
 const guard = sw.guardForm(form, {
   blockOn: ["misspelled"],  // blue unknowns don't block by default
   watch: true,              // live-disable submit buttons ("insists" mode)
-  allowOverride: true,      // resubmit unchanged text within 6s to force through
+  // A guard is a hard block: fix the words or add them to the dictionary.
 });
 
 // Analysis without UI, e.g. for a lint pass:

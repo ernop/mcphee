@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "2.1.0";
+  var VERSION = "3.0.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -1069,10 +1069,6 @@ var McPhee = (function () {
   //   blockOn        issue kinds/classifications that block (default
   //                  ["misspelled"] — blue unknowns don't block by default)
   //   profile/rules  rule overrides for the gating analysis
-  //   allowOverride  when true (default), resubmitting the same unchanged
-  //                  text within overrideMs passes — an escape hatch so a
-  //                  false positive can never hold the user hostage
-  //   overrideMs     override window, default 6000
   //   watch          when true, live-disable the form's submit buttons while
   //                  blocking issues exist (the "insists" mode)
   //   onBlock        callback(blockedFields) for custom UI; default behavior
@@ -1083,10 +1079,6 @@ var McPhee = (function () {
     var fields = options.fields || Array.prototype.slice.call(form.querySelectorAll("textarea"));
     var blockOn = options.blockOn || ["misspelled"];
     var analyzeOpts = { rules: this.resolveRules(options) };
-    var allowOverride = options.allowOverride !== false;
-    var overrideMs = options.overrideMs || 6000;
-    var lastBlockedSignature = null;
-    var lastBlockedAt = 0;
 
     function blockedFields() {
       var blocked = [];
@@ -1099,20 +1091,12 @@ var McPhee = (function () {
       return blocked;
     }
 
-    function signature() {
-      return fields.map(function (f) { return f.value; }).join("\u0000");
-    }
-
+    // A guard is a hard block: fix the words or add them to the dictionary.
+    // No resubmit override — recovery from a false positive is add-to-dict.
     function onSubmit(event) {
       var blocked = blockedFields();
       if (!blocked.length) return;
-      var sig = signature();
-      if (allowOverride && sig === lastBlockedSignature && Date.now() - lastBlockedAt < overrideMs) {
-        return; // deliberate resubmit of unchanged text — let it through
-      }
       event.preventDefault();
-      lastBlockedSignature = sig;
-      lastBlockedAt = Date.now();
       if (options.onBlock) {
         options.onBlock(blocked);
       } else {

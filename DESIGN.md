@@ -80,12 +80,12 @@ POST /<ADMIN_PREFIX>/api/mcphee/dict
 listener + optional `watch` mode that live-disables submit buttons while
 blocking issues exist. Two policies worth naming:
 
-- **Own apps** (`allowOverride: true`, default): a false positive must never
-  hold the author hostage; resubmitting the same unchanged text within 6 s
-  passes. The right long-term response to a false positive is add-to-dict.
-- **Extension mode** (`allowOverride: false`, `watch: true`): the "insists"
-  mode — the submit button stays disabled until the text is clean or the word
-  is added to the dictionary.
+- A guard is a hard block everywhere (v3.0.0, author's decision 2026-08-02:
+  no escape hatches — if the mechanism works, rely on it). The response to a
+  false positive is add-to-dict, which unblocks immediately. Through v2.1.0
+  `allowOverride` let an unchanged resubmit within 6 s pass; removed.
+- `watch: true` is the "insists" mode — the submit button stays disabled
+  while blocking issues exist, instead of rejecting at submit time.
 
 ## Repetition detectors (built: `echo` + `obscureRepeat` rules, v1.4.0)
 

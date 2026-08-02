@@ -1,5 +1,13 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.0.0 — 2026-08-02
+
+Breaking: `guardForm`'s `allowOverride`/`overrideMs` options are gone. A
+guard is a hard block — fix the words or add them to the dictionary; the
+unchanged-resubmit-within-6s escape hatch no longer exists anywhere
+(author's decision: no belt-and-suspenders; rely on the mechanism). No
+consumer used the options.
+
 ## extension 0.2.0 — 2026-08-02
 
 - Escape hatch removed (author's decision: no belt-and-suspenders). A guard
