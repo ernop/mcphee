@@ -1,5 +1,20 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## extension 0.1.0 — 2026-08-02
+
+McPhee Guard, the Firefox extension (`extension/`, versioned separately from
+the library; library unchanged at 2.1.0):
+
+- Teach-a-guard flow: popup → click the editable → click the submit button.
+  Guards are per browser profile, stored per origin in `storage.local`.
+- Blocks the taught button (and Ctrl/Cmd+Enter in the taught field) in the
+  capture phase while the text has misspelled words; toast lists them with
+  `+ dict`. Unchanged-text resubmit within 6 s passes — the escape hatch.
+- `casual` profile, misspellings only; @handles, #hashtags, and URLs are
+  masked before analysis. Dictionary loads lazily, only on guarded origins.
+- Personal dictionary in extension storage, shared across sites in the
+  profile; `+ dict` from any site silences the word everywhere.
+
 ## 2.1.0 — 2026-08-02
 
 The Kedit `All` primitives, for building deep-look/concordance UIs:

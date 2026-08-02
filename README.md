@@ -45,7 +45,11 @@ highlights:
   Corpus counts](https://norvig.com/ngrams/); powers the repetition detectors
 - `demo.html` — feature exercise page (open via any static server)
 - `DESIGN.md` — cross-project architecture: config layering, dictionary sync,
-  form gating, Firefox extension plan
+  form gating, Firefox extension design
+- `extension/` — **McPhee Guard**, the Firefox extension: teach it (two
+  clicks) which submit buttons must refuse misspelled text — built for sites
+  where a typo can't be fixed after posting (x.com). Per-browser guards and
+  dictionary. See `extension/README.md` for build/load/teach instructions
 
 ## Usage
 

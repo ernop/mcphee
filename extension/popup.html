@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { width: 320px; margin: 0; padding: 12px; font: 13px/1.5 system-ui, sans-serif; background: #1f2430; color: #f5f5f5; }
+  h1 { font-size: 14px; margin: 0 0 10px; }
+  button { cursor: pointer; font: 13px system-ui; padding: 5px 12px; border-radius: 5px; border: 1px solid #666; background: #2c3242; color: #f5f5f5; }
+  button:hover { background: #3a4155; }
+  #teach { width: 100%; border-color: #4a90d9; font-weight: 600; margin-bottom: 10px; }
+  .row { display: flex; align-items: center; gap: 8px; padding: 4px 0; border-bottom: 1px solid #333a4c; }
+  .row .sel { flex: 1; font-family: ui-monospace, monospace; font-size: 11px; color: #9fb4d8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row button { padding: 1px 8px; font-size: 12px; }
+  label { display: flex; align-items: center; gap: 6px; margin: 10px 0 6px; }
+  .muted { color: #8a93a8; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>McPhee Guard</h1>
+  <button id="teach">Teach a guard on this page</button>
+  <div id="origin" class="muted"></div>
+  <div id="guards"></div>
+  <label><input type="checkbox" id="enabled"> Guards enabled (all sites)</label>
+  <div id="dict" class="muted"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

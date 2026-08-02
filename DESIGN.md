@@ -1,8 +1,9 @@
 # McPhee cross-project design
 
 One personal spellcheck system, reused everywhere: fuseki4_ai article editor,
-multiImageClient prompt box, stalin-mode-style one-off pages, and eventually a
-Firefox extension that gates form submission on arbitrary sites. This document
+multiImageClient prompt box, stalin-mode-style one-off pages, and the McPhee
+Guard Firefox extension (`extension/`) that gates submission on arbitrary
+sites. This document
 records the architecture decisions and the not-yet-built roadmap so each
 consumer can catch up to master with a folder copy and minor wiring.
 
@@ -115,32 +116,42 @@ Design decisions:
   5+-letter non-`ss` words) — good enough for detection; real stemming would
   add false pairs.
 
-## Firefox extension (next major milestone)
+## Firefox extension — McPhee Guard (MVP shipped 2026-08-02, `extension/`)
 
-WebExtension wrapping this same core; deliberately invasive by design (may
-disable a site's submit/tweet button while text contains egregious errors).
+WebExtension wrapping this same core; deliberately invasive by design
+(refuses a site's submit/tweet button while text contains misspelled words).
 
-Architecture:
+Built (v0.1.0):
 
-- **Content script** = mcphee.js + a site adapter layer. For `<textarea>`s
-  the mirrored-backdrop overlay works as-is. `contenteditable` (Twitter/X
-  composer, Gmail) needs a different marking strategy — the CSS Custom
-  Highlight API is still not in Firefox (verified 2026-08), so v1 ships
-  textarea support everywhere + per-site adapters for the few contenteditable
-  composers that matter (adapter = locate editor root + submit button; gate
-  the button on `analyze(editorText)` without visual marks, or with a small
-  issue-count badge instead of inline highlights).
-- **Dictionaries**: Hunspell files bundled with the extension (no fetch);
-  personal dictionary from the fuseki.net endpoint, mirrored to
-  `storage.sync` (sharded under the 8 KB item quota, 100 KB total is ample
-  for a personal word list), `storage.onChanged` keeps open tabs consistent.
-- **Config**: per-site profile map in `storage.sync`, e.g.
-  `{ "twitter.com": { profile: "casual", blockOn: ["misspelled"], allowOverride: false } }`,
-  default `standard` with gating off (highlight-only) for unknown sites.
-- **Manifest**: MV2-or-MV3 per current Firefox policy at build time;
-  `browser_specific_settings.gecko.id` is required for `storage.sync`.
-- Popup UI: current-site profile switcher, issue list (reuse `attachPanel`
-  rendering), add-to-dictionary, and a global kill switch.
+- **Taught guards instead of per-site adapters.** The original plan was
+  hand-written adapters for each composer; the shipped design lets the user
+  teach a guard in two clicks (popup → click the editable → click the submit
+  button). Selector generation prefers stable attributes (`data-testid`,
+  `id`, `name`, `aria-label`) and falls back to a structural path; selectors
+  are resolved at event time so SPA re-renders can't stale them. Works for
+  `contenteditable` composers (x.com) and real forms alike.
+- **Gate, not overlay.** No inline marks in v0.1 (the CSS Custom Highlight
+  API is still not in Firefox, verified 2026-08). Blocking happens in the
+  capture phase at document level (click on the taught button, or
+  Ctrl/Cmd+Enter inside the taught field) before the page's handlers run; a
+  toast lists the misspelled words with `+ dict` buttons. `casual` profile,
+  `misspelled` only; @handles, #hashtags, and URLs are masked out before
+  analysis so they can't false-block.
+- **Escape hatch** (own-apps semantics, not the planned `allowOverride:
+  false`): resubmitting the same unchanged text within 6 s passes. Chosen
+  after living with the library gate — a hard lock needs the dictionary-sync
+  endpoint first, else a new proper noun on a phoneless profile is a wall.
+- **Dictionaries**: Hunspell files bundled (copied in by `extension/build.ps1`;
+  the ~700 KB dictionary is only fetched/parsed on origins that have guards).
+  Personal dictionary lives in `storage.local` (per browser profile, shared
+  across sites), kept consistent across open tabs via `storage.onChanged`.
+- **Manifest**: MV3, `browser_specific_settings.gecko.id` set.
+- **Popup**: teach button, per-origin guard list with remove, global kill
+  switch, dictionary word count.
+
+Still to build: fuseki.net dictionary-sync endpoint integration with a
+`storage.sync` mirror, optional overlay marks for textareas, per-guard
+profile/blockOn overrides, and an AMO-signed build.
 
 ## Versioning and distribution
 
