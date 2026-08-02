@@ -1,5 +1,14 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## extension 0.2.0 — 2026-08-02
+
+- Escape hatch removed (author's decision: no belt-and-suspenders). A guard
+  is a hard block; the only ways through are fixing the words or `+ dict`.
+- Fails closed: clicking the guarded button while the dictionary is still
+  parsing blocks with a "still loading" toast instead of passing unchecked.
+- `testbed.html`: fake x.com composer (contenteditable +
+  `data-testid` button, no form) for end-to-end guard testing.
+
 ## extension 0.1.0 — 2026-08-02
 
 McPhee Guard, the Firefox extension (`extension/`, versioned separately from

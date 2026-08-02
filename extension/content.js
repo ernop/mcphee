@@ -1,5 +1,6 @@
-// McPhee Guard content script. Tiny until needed: the ~700 KB dictionary is
-// fetched only on origins where a guard exists (or while teaching one).
+// McPhee Guard content script. On origins with a guard the dictionary loads
+// immediately at page load, so it is ready before a post can be written.
+// Unguarded origins load nothing — there is nothing to check there.
 //
 // A guard is a taught pair of CSS selectors — the editable you write in and
 // the button that sends it. Selectors are resolved at event time, never bound
@@ -16,8 +17,6 @@
   var checkerLoading = null;
   var guards = [];          // rules for this origin: { field, button, note }
   var enabled = true;
-  var lastBlock = { sig: null, at: 0 };
-  var OVERRIDE_MS = 6000;
 
   // ---------- storage ----------
 
@@ -89,23 +88,29 @@
     });
   }
 
-  // Returns true when the event was blocked.
+  function blockEvent(event) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    event.stopPropagation();
+  }
+
+  // Returns true when the event was blocked. A guard is a hard block: the
+  // only ways through are fixing the words or adding them to the dictionary.
+  // While the dictionary is still parsing the guard fails closed.
   function checkGuard(rule, event) {
-    if (!checker) { ensureChecker(); return false; } // dictionary still loading: let it pass
+    if (!checker) {
+      ensureChecker();
+      blockEvent(event);
+      showLoadingToast();
+      return true;
+    }
     var field = document.querySelector(rule.field);
     if (!field) return false;
     var text = fieldText(field);
     if (!text.trim()) return false;
     var issues = misspellings(text);
     if (!issues.length) return false;
-    var sig = rule.field + "\u0000" + text;
-    if (lastBlock.sig === sig && Date.now() - lastBlock.at < OVERRIDE_MS) {
-      return false; // deliberate resubmit of unchanged text — escape hatch
-    }
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    event.stopPropagation();
-    lastBlock = { sig: sig, at: Date.now() };
+    blockEvent(event);
     showToast(issues);
     return true;
   }
@@ -185,11 +190,23 @@
 
     var foot = document.createElement("div");
     foot.style.cssText = "margin-top:6px;color:#aab;font-size:12px;";
-    foot.textContent = "Fix them, add to dictionary, or submit the unchanged text again within 6 s to send anyway.";
+    foot.textContent = "Fix them or add to dictionary — the button stays blocked until the text is clean.";
     toastEl.appendChild(foot);
 
     document.documentElement.appendChild(toastEl);
     toastTimer = setTimeout(removeToast, 8000);
+  }
+
+  function showLoadingToast() {
+    removeToast();
+    toastEl = document.createElement("div");
+    toastEl.style.cssText =
+      "position:fixed;right:16px;bottom:16px;z-index:2147483647;max-width:340px;" +
+      "background:#1f2430;color:#f5f5f5;border:2px solid #d9a13f;border-radius:8px;" +
+      "padding:12px 14px;font:13px/1.5 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,.4);";
+    toastEl.textContent = "McPhee dictionary is still loading — try again in a second.";
+    document.documentElement.appendChild(toastEl);
+    toastTimer = setTimeout(removeToast, 3000);
   }
 
   function removeToast() {

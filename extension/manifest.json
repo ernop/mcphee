@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "McPhee Guard",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Teach it which submit buttons to block while the text next to them has misspelled words. Per-browser guards, shared personal dictionary.",
   "browser_specific_settings": {
     "gecko": {

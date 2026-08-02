@@ -37,17 +37,28 @@ button (or pressing Ctrl/Cmd+Enter in the field) with misspelled words in the
 text is blocked in the capture phase before the page sees the event, and a
 toast lists the words with `+ dict` buttons.
 
-## Escape hatch
+The block is hard. The only ways through are fixing the words or adding them
+to the dictionary. If the dictionary is somehow still parsing when you click,
+the guard fails closed (blocks and says so) rather than letting text through
+unchecked. If a guard ever misbehaves, remove it or flip the global switch in
+the popup.
 
-Nothing holds you hostage: submit the *unchanged* text again within 6 seconds
-and it goes through. Editing the text resets the window.
+## Test
+
+`testbed.html` (serve the repo with any static server) is a fake x.com
+composer with the real site's DOM shape — `contenteditable` with
+`data-testid="tweetTextarea_0"`, JS-driven `tweetButton`, no form. Teach a
+guard on it and verify a misspelled post never reaches the feed, by click or
+by Ctrl/Cmd+Enter.
 
 ## Notes
 
 - Selectors prefer `data-testid`/`id`/`aria-label` and are resolved at click
   time, so SPA re-renders don't break guards.
-- The ~700 KB dictionary loads only on origins that have guards (or during
-  teaching); everywhere else the content script is a few KB and idle.
+- On guarded origins the dictionary loads immediately at page load, ready
+  before you can write a post. Unguarded origins load nothing — there is
+  nothing to check there.
 - Checking uses the `casual` profile: only genuinely misspelled words block;
-  capitalization, punctuation, and repetition never do.
+  capitalization, punctuation, and repetition never do. @handles, #hashtags,
+  and URLs are masked before analysis.
 - Manage guards (list/remove) and the global on/off switch from the popup.

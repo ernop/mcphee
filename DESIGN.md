@@ -137,14 +137,17 @@ Built (v0.1.0):
   toast lists the misspelled words with `+ dict` buttons. `casual` profile,
   `misspelled` only; @handles, #hashtags, and URLs are masked out before
   analysis so they can't false-block.
-- **Escape hatch** (own-apps semantics, not the planned `allowOverride:
-  false`): resubmitting the same unchanged text within 6 s passes. Chosen
-  after living with the library gate — a hard lock needs the dictionary-sync
-  endpoint first, else a new proper noun on a phoneless profile is a wall.
-- **Dictionaries**: Hunspell files bundled (copied in by `extension/build.ps1`;
-  the ~700 KB dictionary is only fetched/parsed on origins that have guards).
-  Personal dictionary lives in `storage.local` (per browser profile, shared
-  across sites), kept consistent across open tabs via `storage.onChanged`.
+- **Hard block, no escape hatch** (v0.2.0, author's decision 2026-08-02: no
+  belt-and-suspenders — if the mechanism works, rely on it). The only ways
+  through are fixing the words or `+ dict`. Fails closed while the
+  dictionary is parsing. v0.1.0 briefly had a resubmit-within-6s override;
+  removed. Recovery from a misbehaving guard is the popup (remove guard /
+  global switch), not a per-submit loophole.
+- **Dictionaries**: Hunspell files bundled (copied in by `extension/build.ps1`).
+  On guarded origins the dictionary loads immediately at page load; unguarded
+  origins load nothing because there is nothing to check. Personal dictionary
+  lives in `storage.local` (per browser profile, shared across sites), kept
+  consistent across open tabs via `storage.onChanged`.
 - **Manifest**: MV3, `browser_specific_settings.gecko.id` set.
 - **Popup**: teach button, per-origin guard list with remove, global kill
   switch, dictionary word count.
