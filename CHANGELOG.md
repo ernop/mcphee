@@ -1,5 +1,13 @@
 # McPhee changelog
 
+## 3.8.1 — 2026-08-03
+
+- Contractions (won't, don't, they're, could've, ...) join the stopword
+  set as their own closed class, so they can never be flagged as rare or
+  echoed regardless of frequency-list gaps. This is the structural fix for
+  the list's missing-apostrophes problem; the not-rare list remains for
+  everything else, and the apostrophe-stripped rank fallback stays.
+
 ## 3.8.0 — 2026-08-03
 
 Hover highlighting is now a solid color change, and frequency-list gaps get

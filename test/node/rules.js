@@ -69,20 +69,25 @@ async function main() {
   H.ok(!checker.analyze("usa is big.").some(i => i.kind === "culture"), "+dict word exempt from culture");
   checker.removeCustomWord("usa");
 
+  // --- contractions are stopwords: never repetition candidates ---
+  H.ok(!checker.analyze("We won't stay here and we won't go there.").some(
+    i => i.kind === "obscure" || i.kind === "echo"),
+    "repeated contraction never flagged as rare or echo");
+
   // --- not-rare list: permanent exemption from the repetition detectors ---
-  // The frequency list's web corpus lost apostrophes, so contractions like
-  // "won't" are unranked and would otherwise count as obscure.
-  const rep = "We won't go today. Filler words pad this sentence. We won't go tomorrow either.";
-  checker.markNotRare("won't");
+  const rep = "The obstreperous crowd roared for hours. Some filler prose sits between the two uses here. An obstreperous mood returned.";
+  H.ok(checker.analyze(rep).some(i => i.kind === "obscure" || i.kind === "echo"),
+    "repeated rare word flagged before not-rare");
+  checker.markNotRare("obstreperous");
   H.ok(!checker.analyze(rep).some(i => i.kind === "obscure" || i.kind === "echo"),
     "not-rare word exempt from obscure and echo");
-  H.ok(checker.listNotRareWords().includes("won't"), "not-rare list keeps the word");
-  checker.unmarkNotRare("won't");
+  H.ok(checker.listNotRareWords().includes("obstreperou") || checker.listNotRareWords().includes("obstreperous"),
+    "not-rare list keeps the word");
+  checker.unmarkNotRare("obstreperous");
   H.ok(checker.listNotRareWords().length === 0, "unmarkNotRare removes it");
-  // Apostrophe-stripped rank fallback: "won't" resolves through "wont", so
-  // even without the list entry a ranked stripped form counts.
-  const rank = checker.rankOf("won't");
-  H.ok(rank !== null, "rankOf returns a value for contractions");
+  // Apostrophe-stripped rank fallback: contractions resolve through their
+  // stripped form (won't -> wont) before counting as unranked.
+  H.ok(checker.rankOf("won't") !== null, "rankOf returns a value for contractions");
 
   // --- base rules still fire ---
   const t2 = kinds("teh cat   sat wierd.");

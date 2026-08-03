@@ -81,7 +81,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.8.0";
+  var VERSION = "3.8.1";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -148,8 +148,12 @@ var McPhee = (function () {
 
   // Function words that repeat constantly in healthy prose; never echo
   // candidates even without a frequency list. Content words only get past
-  // this AND the echoCommonRank frequency gate.
-  var STOPWORDS = new Set(("a about above after again against all also although always am an and any are around as at be because been before being below between both but by came can cannot come could day did do does doing down during each even every few first for from get give go good got had has have having he her here hers herself him himself his how however i if in into is it its itself just know like little long made make many may me might more most much must my myself never new no nor not now of off on once one only onto or other our ours ourselves out over own said same see she should since so some still such take than that the their theirs them themselves then there these they this those through time to too two under until up upon us used very was way we well went were what when where which while who whom why will with without would year you your yours yourself yourselves").split(" "));
+  // this AND the echoCommonRank frequency gate. Contractions are included
+  // as their own closed class: the vendored frequency list's web corpus
+  // lost apostrophes, so without these entries "won't" would count as an
+  // unranked (hence "rare") word.
+  var STOPWORDS = new Set(("a about above after again against all also although always am an and any are around as at be because been before being below between both but by came can cannot come could day did do does doing down during each even every few first for from get give go good got had has have having he her here hers herself him himself his how however i if in into is it its itself just know like little long made make many may me might more most much must my myself never new no nor not now of off on once one only onto or other our ours ourselves out over own said same see she should since so some still such take than that the their theirs them themselves then there these they this those through time to too two under until up upon us used very was way we well went were what when where which while who whom why will with without would year you your yours yourself yourselves"
+    + " ain't aren't can't couldn't didn't doesn't don't hadn't hasn't haven't he'd he'll i'd i'll i'm i've isn't it'll mightn't mustn't needn't shan't she'd she'll shouldn't that'll there'd there'll they'd they'll they're they've wasn't we'd we'll we're we've weren't won't wouldn't you'd you'll you're you've could've might've must've should've would've y'all o'clock").split(" "));
 
   // Lowercases and strips a possessive; the shared normal form for the
   // repetition detectors.

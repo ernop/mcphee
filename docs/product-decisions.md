@@ -175,6 +175,28 @@ Linked from [AGENTS.md](../AGENTS.md).
   every occurrence simultaneously with the solid hover color; the browser
   suite asserts at least two marks recolor when a repeat row is hovered.
 
+## 2026-08-03 — Frequency-list gaps: fix the class, not just instances
+
+- Creator, following the "won't" fix: "is there another way to handle these
+  hyper-comon-actually but we mistakenly mark as rare words? by patching
+  and fixing the list or something? surely somebody has done that?" The
+  agent concluded contractions are a closed class of function words —
+  standard stopword lists (NLTK's among them) carry them for exactly this
+  reason — and added the full set to McPhee's stopwords, making them
+  permanently invisible to both repetition detectors. Larger option
+  available if ever wanted: replace the vendored Norvig ranks with a corpus
+  that kept apostrophes (wordfreq, SUBTLEX, OpenSubtitles-derived lists),
+  at the cost of shifting every rank and the obscure threshold's meaning.
+
+## 2026-08-03 — Stale overlay-off preferences get one amnesty
+
+- After the 3.7.0 overlay fix the creator still saw no highlighting: their
+  browser had persisted `fuseki_mcphee_enabled='0'` from the era when the
+  overlay was integrity-hidden and toggling it looked useless. Since any
+  "off" stored before the overlay worked cannot be an informed choice, the
+  editor clears it once (flagged so it runs a single time); opt-outs from
+  here on stick.
+
 ## 2026-08-03 — The rare-word list must be correctable
 
 - Creator, after "won't" was treated as rare: "i must be able to add words
