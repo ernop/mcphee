@@ -1,5 +1,47 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.4.0 — 2026-08-02
+
+- Hover pulse rework: pulsing now starts the instant the pointer enters a
+  panel row and stops the instant it leaves — no trailing animation, ever,
+  and only one row's marks pulse at a time. Echo/repeat rows pulse EVERY
+  occurrence of the word together. Controller API: `pulseStart(starts)` /
+  `pulseStop()` replace `flashAt(offset)`.
+- Clicking anywhere on a panel row's background (not just "select") selects
+  the issue's text in the textarea.
+- Persistent ignore: every word row carries an `ignore` button — a per-word
+  mute stored in localStorage (`customDictStorageKey + ":ignored"`), separate
+  from the personal dictionary. A 3-second "undo ignore" chip guards against
+  misclicks; the header's `ignored (N)` button opens the full list for
+  one-by-one unignoring or a two-click-confirmed "unignore all". Checker
+  API: `ignoreWord`, `unignoreWord`, `unignoreAll`, `listIgnoredWords`.
+- Normal-case fallback: an all-caps word with no dictionary suggestions now
+  offers its normal-cased form (SMITTH → Smitth) as a one-click fix.
+- New `culture` rule (own gentle teal): nation/group/language/religion
+  names written lowercase — "japanese" → Japanese, "usa" → USA. The default
+  list is deliberately conservative: words whose lowercase form is a common
+  English word (turkey, china, polish, black...) are excluded to avoid
+  constant false positives; add project-specific entries via
+  `options.cultureWords`. On in standard/strict, off in casual. `+dict` and
+  `ignore` both exempt a word.
+- Formality chooser: three always-visible buttons — casual / normal /
+  formal — mapping to the casual/standard/strict profiles, persisted per
+  origin (`formalityStorageKey`, default `mcphee_formality`). The selected
+  level is a thick-bordered, obviously-different button.
+- Rule config: a `⚙ config` toggle beside the chooser opens per-rule
+  on/off checkboxes plus the three repetition knobs (echo window, echo
+  common-rank exemption, obscure rank threshold), persisted per origin as
+  overrides on top of the chosen formality (`ruleOverridesStorageKey`,
+  default `mcphee_rule_overrides`).
+- Overlay integrity self-check (never display wrong highlights): after
+  every render the controller verifies content parity (backdrop text ===
+  textarea value) and wrap parity (equal scrollHeights). On violation it
+  re-mirrors and re-renders once; if the invariant still fails the overlay
+  hides itself — fail closed, a missing highlight beats a misplaced one —
+  warns on the console, and keeps retrying on the background poll until it
+  verifies again. See DESIGN.md "Overlay correctness".
+- Node smoke tests for the analysis layer: `test/node-smoke-3.4.js`.
+
 ## 3.3.0 — 2026-08-02
 
 - New `dock(textarea, opts)`: batteries-included layout that claims space

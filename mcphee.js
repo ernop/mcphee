@@ -77,13 +77,14 @@
 //                                   (last character boxed) -> orange outline
 //   .mcphee-mark-echo            same word reused nearby -> lavender
 //   .mcphee-mark-obscure         rare word reused in the text -> green
+//   .mcphee-mark-culture         lowercase nation/group/language name -> teal
 // The overlay renders BEHIND the textarea (transparent text, colored
 // backgrounds only), so typing latency and native selection are untouched.
 
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.3.0";
+  var VERSION = "3.4.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -92,27 +93,61 @@ var McPhee = (function () {
   var SENTENCE_ENDS = ".!?\u2026";
   var TRAILING_CLOSERS = "\"'\u2019\u201d)]";
 
-  // Named rule profiles. "standard" is the historical behavior; "strict" adds
-  // the capitalization/punctuation rules; "casual" is the no-nagging mode for
-  // contexts where lowercase proper nouns and unpunctuated prose are the
-  // author's intent.
+  // Named rule profiles, presented in UIs as the formality ladder:
+  // casual < standard ("normal") < strict ("formal"). "casual" is the
+  // no-nagging mode for contexts where lowercase proper nouns ("japanese"),
+  // lowercase i, and unpunctuated prose are the author's intent; "strict"
+  // demands the full rigamarole: sentences start capitalized, text ends
+  // punctuated. Exact parameters for every rule are documented in README.md
+  // ("Rule catalog").
   var PROFILES = {
     standard: {
       misspelled: true, unknown: true, doublespace: true,
       sentenceCapitalization: false, terminalPunctuation: false,
-      echo: true, obscureRepeat: true,
+      echo: true, obscureRepeat: true, culture: true,
     },
     strict: {
       misspelled: true, unknown: true, doublespace: true,
       sentenceCapitalization: true, terminalPunctuation: true,
-      echo: true, obscureRepeat: true,
+      echo: true, obscureRepeat: true, culture: true,
     },
     casual: {
       misspelled: true, unknown: false, doublespace: true,
       sentenceCapitalization: false, terminalPunctuation: false,
-      echo: false, obscureRepeat: false,
+      echo: false, obscureRepeat: false, culture: false,
     },
   };
+
+  // Formality ladder shown by the panel chooser; maps display names to
+  // profiles. "normal" is the historical standard behavior.
+  var FORMALITY_LEVELS = [
+    { id: "casual", label: "casual" },
+    { id: "standard", label: "normal" },
+    { id: "strict", label: "formal" },
+  ];
+
+  // ---------- culture rule: nation/group/language names ----------
+  // Proper nouns of nationality, place, language, religion, and ethnicity
+  // written in lowercase ("japanese", "usa", "english") get their own
+  // gentle category instead of drowning among unknown-word flags. The list
+  // is deliberately conservative: entries whose lowercase form is a common
+  // English word (turkey, china, polish, us...) are excluded because
+  // flagging them would produce constant false positives — "Black" as an
+  // ethnonym is the clearest example: lowercase "black" is a color far more
+  // often, so it is NOT in the default list. Add such words per project via
+  // options.cultureWords when the writing context justifies it.
+  var CULTURE_ALLCAPS = {
+    usa: "USA", uk: "UK", uae: "UAE", ussr: "USSR", eu: "EU", nato: "NATO",
+    nyc: "NYC", la: "LA", sf: "SF", ddr: "DDR",
+  };
+  var CULTURE_WORDS = new Set(("american america americans english england britain british french france german germany germans spanish spain italian italy italians portuguese portugal dutch netherlands belgian belgium swiss switzerland austrian austria greek greece greeks russian russia russians ukrainian ukraine poland czech slovak slovakia hungarian hungary romanian romania bulgarian bulgaria serbian serbia croatian croatia danish denmark swedish sweden swedes norwegian norway finnish finland icelandic iceland irish ireland scottish scotland welsh wales japanese japan chinese korean korea koreans vietnamese vietnam thai thailand indian india indians pakistani pakistan bangladeshi bangladesh nepali nepal indonesian indonesia malaysian malaysia filipino filipinos philippines singaporean singapore mongolian mongolia taiwanese taiwan tibetan tibet african africa africans egyptian egypt moroccan morocco algerian algeria tunisian tunisia libyan libya nigerian nigeria kenyan kenya ethiopian ethiopia ghanaian ghana somali somalia sudanese sudan ugandan uganda tanzanian tanzania zimbabwean zimbabwe rwandan rwanda senegalese senegal cameroonian cameroon congolese congo mexican mexico mexicans canadian canada canadians brazilian brazil brazilians argentine argentina chilean peruvian peru colombian colombia venezuelan venezuela bolivian bolivia ecuadorian ecuador uruguayan uruguay paraguayan paraguay cuban cubans haitian haiti jamaican jamaica australian australia australians iranian iran iranians iraqi iraq israeli israel israelis palestinian palestine palestinians syrian syria lebanese lebanon saudi arabia arabian arabic turkish armenian armenia azerbaijani azerbaijan georgian kazakh kazakhstan uzbek uzbekistan afghan afghanistan afghans european europe europeans asian asia asians latino latina latinos hispanic hispanics arab arabs jewish jew jews christian christians muslim muslims islamic islam buddhist buddhists hindu hindus catholic catholics protestant protestants mormon mormons sikh sikhs london paris tokyo moscow beijing berlin madrid rome vienna amsterdam dublin edinburgh stockholm oslo copenhagen helsinki warsaw prague budapest athens istanbul cairo delhi mumbai seoul bangkok hanoi manila jakarta sydney melbourne toronto vancouver chicago boston seattle texas california florida hawaii alaska").split(" "));
+
+  // Expected capitalized form for a lowercase culture word.
+  function cultureExpected(lower) {
+    if (CULTURE_ALLCAPS[lower]) return CULTURE_ALLCAPS[lower];
+    if (CULTURE_WORDS.has(lower)) return lower.charAt(0).toUpperCase() + lower.slice(1);
+    return null;
+  }
 
   // Function words that repeat constantly in healthy prose; never echo
   // candidates even without a frequency list. Content words only get past
@@ -252,6 +287,14 @@ var McPhee = (function () {
     this.suggestionCache = new Map();
     this.customWords = new Set();
     this.loadCustomDict();
+    // Per-project additions to the culture list (e.g. group names like
+    // "Black" that are too ambiguous for the default list).
+    this.cultureWords = new Set((options.cultureWords || []).map(function (w) { return w.toLowerCase(); }));
+    // Persistent per-word mute: unlike +dict this doesn't teach the
+    // dictionary anything, it just stops flagging the exact word.
+    this.ignoreStorageKey = options.ignoreStorageKey || (this.storageKey + ":ignored");
+    this.ignoredWords = new Set();
+    this.loadIgnoredWords();
     // Repetition-detector state: word -> frequency rank (1 = most common),
     // tuning knobs, and the session's "this repetition is deliberate" set.
     this.freqRank = freqRank || null;
@@ -286,6 +329,38 @@ var McPhee = (function () {
       base = PROFILES[opts.profile];
     }
     return Object.assign({}, base, opts.rules || {});
+  };
+
+  Checker.prototype.loadIgnoredWords = function () {
+    try {
+      var stored = JSON.parse(localStorage.getItem(this.ignoreStorageKey) || "[]");
+      this.ignoredWords = new Set(stored.map(function (w) { return String(w).toLowerCase(); }));
+    } catch (e) {
+      this.ignoredWords = new Set();
+    }
+  };
+
+  Checker.prototype.saveIgnoredWords = function () {
+    localStorage.setItem(this.ignoreStorageKey, JSON.stringify(Array.from(this.ignoredWords).sort()));
+  };
+
+  Checker.prototype.ignoreWord = function (word) {
+    this.ignoredWords.add(String(word).toLowerCase());
+    this.saveIgnoredWords();
+  };
+
+  Checker.prototype.unignoreWord = function (word) {
+    this.ignoredWords.delete(String(word).toLowerCase());
+    this.saveIgnoredWords();
+  };
+
+  Checker.prototype.unignoreAll = function () {
+    this.ignoredWords.clear();
+    this.saveIgnoredWords();
+  };
+
+  Checker.prototype.listIgnoredWords = function () {
+    return Array.from(this.ignoredWords).sort();
   };
 
   Checker.prototype.loadCustomDict = function () {
@@ -371,7 +446,10 @@ var McPhee = (function () {
   //                  (carries norm + distance, both occurrences flagged)
   //   obscure        rare word (rank >= obscureRank or unranked) used 2+
   //                  times anywhere (carries norm + count, all flagged)
-  // Only issues are returned; clean text yields [].
+  //   culture        lowercase nation/group/language/religion name
+  //                  (carries expected, the properly-cased form)
+  // Words on the persistent ignore list are skipped entirely. Only issues
+  // are returned; clean text yields [].
   Checker.prototype.analyze = function (text, opts) {
     var rules = this.resolveRules(opts);
     var issues = [];
@@ -383,7 +461,19 @@ var McPhee = (function () {
       if (m[1] !== undefined) {
         var cls = this.classify(m[1]);
         words.push({ value: m[1], start: m.index, end: m.index + m[1].length, cls: cls });
-        if (cls !== "ok" && rules[cls]) {
+        var lower = m[1].toLowerCase();
+        if (this.ignoredWords.has(lower)) continue;
+        // Culture check first: a lowercase nation/group/language name gets
+        // its own category instead of a generic unknown-word flag.
+        var expected = null;
+        if (rules.culture && m[1] === lower && !this.customWords.has(lower) && !this.extraWords.has(lower)) {
+          expected = this.cultureWords.has(lower)
+            ? lower.charAt(0).toUpperCase() + lower.slice(1)
+            : cultureExpected(lower);
+        }
+        if (expected) {
+          issues.push({ kind: "culture", value: m[1], start: m.index, end: m.index + m[1].length, classification: "culture", expected: expected });
+        } else if (cls !== "ok" && rules[cls]) {
           issues.push({ kind: "word", value: m[1], start: m.index, end: m.index + m[1].length, classification: cls });
         } else if (starts && starts.has(m.index) && cls === "ok") {
           // Only dictionary words get the capitalization nag; a misspelled or
@@ -735,12 +825,35 @@ var McPhee = (function () {
       backdrop.style.height = (textarea.clientHeight + bt + bb) + "px";
     }
 
+    // ----- overlay integrity: never display wrong highlights -----
+    // Two invariants must hold after every render, or the marks are lies:
+    //   1. content parity — the backdrop's text equals the textarea's value
+    //      (plus the trailing scroll-parity newline), so every mark sits on
+    //      exactly the characters the analysis measured;
+    //   2. wrap parity — both boxes lay the text out identically, observable
+    //      as equal scrollHeights (same wrap points => same line count).
+    // On violation: one automatic full regeneration; if the invariant still
+    // fails, the overlay HIDES itself (fail closed — a missing highlight is
+    // an inconvenience, a misplaced one is misinformation), warns on the
+    // console, and retries on the background poll until it verifies again.
+    var integrityFailed = false;
+
+    function verifyIntegrity() {
+      if (backdrop.textContent !== lastRendered + "\n") return false;
+      if (Math.abs(backdrop.scrollHeight - textarea.scrollHeight) > 2) return false;
+      return true;
+    }
+
+    function applyVisibility() {
+      backdrop.style.visibility = enabled && !integrityFailed ? "visible" : "hidden";
+    }
+
     // refresh() re-renders only when the text changed; refresh(true) is a
     // full regeneration — styles re-mirrored, geometry re-synced, marks
     // rebuilt from scratch — the recovery path for any drift.
     function refresh(force) {
       if (!enabled) return;
-      if (force === true) {
+      if (force === true || integrityFailed) {
         mirrorStyles();
         lastRendered = null;
       }
@@ -748,6 +861,22 @@ var McPhee = (function () {
         lastRendered = textarea.value;
         backdrop.innerHTML = self.renderHtml(textarea.value, renderOpts);
         syncGeometry();
+        if (!verifyIntegrity()) {
+          // One self-repair attempt: re-mirror styles and re-render.
+          mirrorStyles();
+          backdrop.innerHTML = self.renderHtml(textarea.value, renderOpts);
+          syncGeometry();
+        }
+        var ok = verifyIntegrity();
+        if (!ok && !integrityFailed) {
+          console.warn("McPhee: overlay integrity check failed; hiding highlights rather than showing them misaligned.", {
+            contentParity: backdrop.textContent === lastRendered + "\n",
+            backdropScrollHeight: backdrop.scrollHeight,
+            textareaScrollHeight: textarea.scrollHeight,
+          });
+        }
+        integrityFailed = !ok;
+        applyVisibility();
       }
       backdrop.scrollTop = textarea.scrollTop;
       backdrop.scrollLeft = textarea.scrollLeft;
@@ -794,15 +923,23 @@ var McPhee = (function () {
       }
     }
 
-    // Gently pulses the mark at `start` so the eye finds it after a
-    // hover-scroll. Restarting the class re-triggers the CSS animation.
-    function flashAt(start) {
+    // Hover pulse: starts the instant the pointer enters a panel row and
+    // stops the instant it leaves — never a trailing animation, never more
+    // than one pulsing group at a time. `starts` lists every occurrence to
+    // pulse (echo rows pulse all their words together).
+    function pulseStart(starts) {
+      pulseStop();
       if (!enabled) return;
-      var m = backdrop.querySelector('mark[data-start="' + start + '"]');
-      if (!m) return;
-      m.classList.remove("mcphee-mark-flash");
-      void m.offsetWidth;
-      m.classList.add("mcphee-mark-flash");
+      starts.forEach(function (s) {
+        var m = backdrop.querySelector('mark[data-start="' + s + '"]');
+        if (m) m.classList.add("mcphee-mark-pulse");
+      });
+    }
+
+    function pulseStop() {
+      backdrop.querySelectorAll(".mcphee-mark-pulse").forEach(function (m) {
+        m.classList.remove("mcphee-mark-pulse");
+      });
     }
 
     // The set of issue offsets whose marks are currently visible on screen.
@@ -827,7 +964,8 @@ var McPhee = (function () {
       // changes classification without changing the text).
       refresh: refresh,
       scrollToOffset: scrollToOffset,
-      flashAt: flashAt,
+      pulseStart: pulseStart,
+      pulseStop: pulseStop,
       visibleStarts: visibleStarts,
       setRules: function (o) {
         renderOpts.rules = self.resolveRules(o);
@@ -835,7 +973,7 @@ var McPhee = (function () {
       },
       setEnabled: function (on) {
         enabled = !!on;
-        backdrop.style.visibility = enabled ? "visible" : "hidden";
+        applyVisibility();
         textarea.spellcheck = !enabled;
         // Full regeneration on re-enable: anything (styles, geometry, text)
         // may have changed while the overlay was off.
@@ -873,6 +1011,52 @@ var McPhee = (function () {
 
     container.classList.add("mcphee-panel");
 
+    // Formality choice (profile) and per-rule overrides persist per origin,
+    // so each hostname/browser pair keeps its own writing register.
+    var formalityKey = config.formalityStorageKey || "mcphee_formality";
+    var overridesKey = config.ruleOverridesStorageKey || "mcphee_rule_overrides";
+    var currentProfile = null;
+    var ruleOverrides = {};
+    try {
+      var storedProfile = localStorage.getItem(formalityKey);
+      if (storedProfile && PROFILES[storedProfile]) currentProfile = storedProfile;
+      ruleOverrides = JSON.parse(localStorage.getItem(overridesKey) || "{}") || {};
+    } catch (e) { ruleOverrides = {}; }
+    if (!currentProfile) currentProfile = config.profile || "standard";
+    var showConfig = false;
+    var showIgnored = false;
+    var confirmUnignoreAll = false;
+
+    function activeRules() {
+      return Object.assign(
+        {},
+        self.resolveRules({ profile: currentProfile, rules: config.rules }),
+        ruleOverrides.rules || {}
+      );
+    }
+
+    function persistOverrides() {
+      try { localStorage.setItem(overridesKey, JSON.stringify(ruleOverrides)); } catch (e) { /* private mode */ }
+    }
+
+    function applyRuleState() {
+      analyzeOpts.rules = activeRules();
+      var params = ruleOverrides.params || {};
+      ["echoWindowWords", "echoCommonRank", "obscureRank"].forEach(function (p) {
+        if (typeof params[p] === "number" && params[p] > 0) self[p] = params[p];
+      });
+      if (config.controller && config.controller.setRules) {
+        config.controller.setRules({ rules: analyzeOpts.rules });
+      }
+    }
+
+    function setFormality(profileId) {
+      currentProfile = profileId;
+      try { localStorage.setItem(formalityKey, profileId); } catch (e) { /* private mode */ }
+      applyRuleState();
+      render();
+    }
+
     function refreshOverlay() {
       if (config.controller) config.controller.refresh(true);
     }
@@ -901,16 +1085,6 @@ var McPhee = (function () {
       return b;
     }
 
-    // Hovering a row scrolls the textarea to that issue's location and
-    // gently flashes its mark so the author's eye lands on it immediately.
-    function scrollOnHover(row, offset) {
-      if (!config.controller || !config.controller.scrollToOffset) return;
-      row.addEventListener("mouseenter", function () {
-        config.controller.scrollToOffset(offset);
-        if (config.controller.flashAt) config.controller.flashAt(offset);
-      });
-    }
-
     // "Move cursor here": focuses the textarea with the issue's text SELECTED
     // so the author can immediately retype over it. The issue is re-located
     // in the current value at click time (text may have moved since render).
@@ -926,22 +1100,76 @@ var McPhee = (function () {
       });
     }
 
-    // Rows are three grid slots — content, dict-action, select — so the
-    // "+ dict"/"dismiss" and "select" buttons align vertically across rows.
-    function panelRow(offset, mainChildren, actionBtn, selBtn) {
+    // Ignore: persistent per-word mute (localStorage). Unlike +dict it
+    // teaches the dictionary nothing — the exact word just stops being
+    // flagged. A 3-second "undo ignore" chip guards against misclicks; the
+    // header's "ignored" button reopens the full list for unignoring.
+    function ignoreButton(value) {
+      return button("ignore", "mcphee-panel-ignore", function () {
+        self.ignoreWord(value);
+        afterAction();
+        showUndoChip(value);
+      });
+    }
+
+    function showUndoChip(word) {
+      var chip = document.createElement("div");
+      chip.className = "mcphee-undo-chip";
+      var text = document.createElement("span");
+      text.textContent = "ignored \u201c" + word + "\u201d";
+      var undo = button("undo ignore", "mcphee-panel-select", function () {
+        self.unignoreWord(word);
+        chip.remove();
+        afterAction();
+      });
+      chip.appendChild(text);
+      chip.appendChild(undo);
+      var header = container.querySelector(".mcphee-panel-header");
+      if (header && header.nextSibling) container.insertBefore(chip, header.nextSibling);
+      else container.appendChild(chip);
+      setTimeout(function () { chip.remove(); }, 3000);
+    }
+
+    // Rows are four grid slots — content, ignore, dict-action, select — so
+    // each action column aligns vertically across every row.
+    function panelRow(mainChildren, ignoreBtn, actionBtn, selBtn) {
       var row = document.createElement("div");
       row.className = "mcphee-panel-item";
-      scrollOnHover(row, offset);
       var main = document.createElement("span");
       main.className = "mcphee-panel-main";
       mainChildren.forEach(function (c) { main.appendChild(c); });
       row.appendChild(main);
+      row.appendChild(ignoreBtn || document.createElement("span"));
       row.appendChild(actionBtn || document.createElement("span"));
       row.appendChild(selBtn);
       return row;
     }
 
-    function wordRow(value, classification, count, firstStart) {
+    // Row behaviors shared by every issue type: hovering scrolls the text
+    // to the first occurrence and pulses EVERY occurrence for exactly as
+    // long as the pointer stays (echo rows pulse both words); leaving stops
+    // the pulse instantly. Clicking the row background acts like "select".
+    function wireRow(row) {
+      var el = row.el;
+      el.addEventListener("mouseenter", function () {
+        if (config.controller && config.controller.scrollToOffset) {
+          config.controller.scrollToOffset(row.start);
+        }
+        if (config.controller && config.controller.pulseStart) {
+          config.controller.pulseStart(row.spans.map(function (s) { return s[0]; }));
+        }
+      });
+      el.addEventListener("mouseleave", function () {
+        if (config.controller && config.controller.pulseStop) config.controller.pulseStop();
+      });
+      el.addEventListener("click", function (e) {
+        if (e.target.closest("button")) return;
+        var sel = el.querySelector(".mcphee-panel-select");
+        if (sel) sel.click();
+      });
+    }
+
+    function wordRow(value, classification, count) {
       var label = document.createElement("span");
       label.className = "mcphee-panel-word mcphee-panel-word-" + classification;
       label.textContent = count > 1 ? value + " \u00d7" + count : value;
@@ -959,6 +1187,13 @@ var McPhee = (function () {
           }));
         });
       }
+      // No suggestions for an all-caps word: offer its normal-cased form.
+      if (main.length === 1 && value.length > 1 && value === value.toUpperCase()) {
+        var normal = value.charAt(0) + value.slice(1).toLowerCase();
+        main.push(button(normal, "mcphee-panel-suggestion", function () {
+          replaceAllOccurrences(value, normal);
+        }));
+      }
       var dict = button("+ dict", "mcphee-panel-adddict", function () {
         self.addCustomWord(value);
         afterAction();
@@ -966,7 +1201,161 @@ var McPhee = (function () {
       var sel = selectButton(function (i) {
         return i.kind === "word" && i.value === value;
       });
-      return panelRow(firstStart, main, dict, sel);
+      return panelRow(main, ignoreButton(value), dict, sel);
+    }
+
+    function cultureRow(value, expected, count) {
+      var label = document.createElement("span");
+      label.className = "mcphee-panel-word mcphee-panel-word-culture";
+      label.textContent = count > 1 ? value + " \u00d7" + count : value;
+      var fix = button(expected, "mcphee-panel-suggestion", function () {
+        replaceAllOccurrences(value, expected);
+      });
+      var dict = button("+ dict", "mcphee-panel-adddict", function () {
+        self.addCustomWord(value);
+        afterAction();
+      });
+      var sel = selectButton(function (i) {
+        return i.kind === "culture" && i.value === value;
+      });
+      return panelRow([label, fix], ignoreButton(value), dict, sel);
+    }
+
+    // Formality chooser: three always-visible buttons; the selected one is
+    // a thick-bordered, obviously-different button (never an underline).
+    function formalityChooser() {
+      var bar = document.createElement("div");
+      bar.className = "mcphee-formality";
+      FORMALITY_LEVELS.forEach(function (level) {
+        var b = button(level.label, "mcphee-formality-btn", function () {
+          setFormality(level.id);
+        });
+        if (level.id === currentProfile) b.classList.add("mcphee-formality-selected");
+        bar.appendChild(b);
+      });
+      var cfg = button("\u2699 config", "mcphee-formality-config", function () {
+        showConfig = !showConfig;
+        render();
+      });
+      if (showConfig) cfg.classList.add("mcphee-formality-selected");
+      bar.appendChild(cfg);
+      return bar;
+    }
+
+    // Rule config: per-rule on/off plus the repetition-detector knobs, all
+    // persisted per origin as overrides on top of the chosen formality.
+    var RULE_LABELS = {
+      misspelled: "misspellings (pink)",
+      unknown: "unknown words (blue)",
+      doublespace: "extra spaces (yellow)",
+      culture: "lowercase nation/group names (teal)",
+      echo: "same word nearby (lavender)",
+      obscureRepeat: "rare word reused (green)",
+      sentenceCapitalization: "sentence capitalization (orange)",
+      terminalPunctuation: "terminal punctuation",
+    };
+    var RULE_PARAMS = [
+      { key: "echoWindowWords", label: "echo window (words)" },
+      { key: "echoCommonRank", label: "echo exempt above rank" },
+      { key: "obscureRank", label: "obscure below rank" },
+    ];
+
+    function configSection() {
+      var box = document.createElement("div");
+      box.className = "mcphee-config";
+      var rules = activeRules();
+      Object.keys(RULE_LABELS).forEach(function (rule) {
+        var line = document.createElement("label");
+        line.className = "mcphee-config-line";
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = !!rules[rule];
+        cb.addEventListener("change", function () {
+          ruleOverrides.rules = ruleOverrides.rules || {};
+          ruleOverrides.rules[rule] = cb.checked;
+          persistOverrides();
+          applyRuleState();
+          render();
+        });
+        line.appendChild(cb);
+        line.appendChild(document.createTextNode(" " + RULE_LABELS[rule]));
+        box.appendChild(line);
+      });
+      RULE_PARAMS.forEach(function (p) {
+        var line = document.createElement("label");
+        line.className = "mcphee-config-line";
+        var input = document.createElement("input");
+        input.type = "number";
+        input.min = "1";
+        input.value = self[p.key];
+        input.addEventListener("change", function () {
+          var v = parseInt(input.value, 10);
+          if (!(v > 0)) return;
+          ruleOverrides.params = ruleOverrides.params || {};
+          ruleOverrides.params[p.key] = v;
+          persistOverrides();
+          applyRuleState();
+          afterAction();
+        });
+        line.appendChild(input);
+        line.appendChild(document.createTextNode(" " + p.label));
+        box.appendChild(line);
+      });
+      var reset = button("reset to profile defaults", "mcphee-panel-select", function () {
+        ruleOverrides = {};
+        persistOverrides();
+        self.echoWindowWords = 50;
+        self.echoCommonRank = 2000;
+        self.obscureRank = 10000;
+        applyRuleState();
+        afterAction();
+      });
+      box.appendChild(reset);
+      return box;
+    }
+
+    // Ignored-words manager: unignore one by one, or all via a two-click
+    // confirm (first click arms it, second executes).
+    function ignoredSection() {
+      var box = document.createElement("div");
+      box.className = "mcphee-config";
+      var words = self.listIgnoredWords();
+      if (!words.length) {
+        box.appendChild(document.createTextNode("nothing ignored"));
+        return box;
+      }
+      words.forEach(function (w) {
+        var line = document.createElement("div");
+        line.className = "mcphee-config-line";
+        var un = button("unignore", "mcphee-panel-select", function () {
+          self.unignoreWord(w);
+          afterAction();
+        });
+        var t = document.createElement("span");
+        t.textContent = w + " ";
+        line.appendChild(t);
+        line.appendChild(un);
+        box.appendChild(line);
+      });
+      var all = button(
+        confirmUnignoreAll ? "confirm: unignore all " + words.length : "unignore all",
+        "mcphee-panel-ignore",
+        function () {
+          if (!confirmUnignoreAll) {
+            confirmUnignoreAll = true;
+            render();
+            setTimeout(function () {
+              if (confirmUnignoreAll) { confirmUnignoreAll = false; render(); }
+            }, 3000);
+            return;
+          }
+          confirmUnignoreAll = false;
+          self.unignoreAll();
+          afterAction();
+        }
+      );
+      box.appendChild(all);
+      return box;
     }
 
     function render() {
@@ -980,6 +1369,18 @@ var McPhee = (function () {
         ? issues.length + " issue" + (issues.length === 1 ? "" : "s")
         : "no issues";
       header.appendChild(headerLabel);
+      var headerBtns = document.createElement("span");
+      headerBtns.className = "mcphee-panel-headerbtns";
+      var ignoredCount = self.ignoredWords.size;
+      if (ignoredCount || showIgnored) {
+        var ignoredBtn = button("ignored (" + ignoredCount + ")", "mcphee-panel-ignore", function () {
+          showIgnored = !showIgnored;
+          confirmUnignoreAll = false;
+          render();
+        });
+        if (showIgnored) ignoredBtn.classList.add("mcphee-formality-selected");
+        headerBtns.appendChild(ignoredBtn);
+      }
       // Manual escape hatch: full overlay regeneration (styles, geometry,
       // marks) plus a fresh panel, for when anything looks stale.
       var recheckBtn = button("\u21bb recheck", "mcphee-panel-recheck", function () {
@@ -987,12 +1388,18 @@ var McPhee = (function () {
         render();
       });
       recheckBtn.title = "Force full re-analysis and overlay redraw";
-      header.appendChild(recheckBtn);
+      headerBtns.appendChild(recheckBtn);
+      header.appendChild(headerBtns);
       container.appendChild(header);
+
+      container.appendChild(formalityChooser());
+      if (showConfig) container.appendChild(configSection());
+      if (showIgnored) container.appendChild(ignoredSection());
 
       // Group repeated words into a single row (remembering the first
       // occurrence so hover can scroll to it).
       var wordGroups = new Map();
+      var cultureGroups = new Map();
       var repeatGroups = new Map(); // norm -> echo/obscure group
       var doubleSpaces = 0;
       var firstDoubleSpaceStart = null;
@@ -1006,6 +1413,14 @@ var McPhee = (function () {
             group.spans.push([issue.start, issue.end]);
           } else {
             wordGroups.set(key, { count: 1, start: issue.start, spans: [[issue.start, issue.end]] });
+          }
+        } else if (issue.kind === "culture") {
+          var cg = cultureGroups.get(issue.value);
+          if (cg) {
+            cg.count++;
+            cg.spans.push([issue.start, issue.end]);
+          } else {
+            cultureGroups.set(issue.value, { count: 1, start: issue.start, expected: issue.expected, spans: [[issue.start, issue.end]] });
           }
         } else if (issue.kind === "echo" || issue.kind === "obscure") {
           // An echo outranks an obscure row for the same word.
@@ -1028,12 +1443,12 @@ var McPhee = (function () {
         }
       });
 
-      // Sections by issue type — misspelled (red), unknown (blue),
-      // repetition, capitalization, punctuation, spaces — and document
-      // order (first occurrence) within each section.
+      // Sections by issue type — misspelled (red), unknown (blue), culture
+      // (teal), repetition, capitalization, punctuation, spaces — and
+      // document order (first occurrence) within each section.
       var SECTION_RANK = {
-        misspelled: 0, unknown: 1, echo: 2, obscure: 2,
-        capitalization: 3, punctuation: 4, doublespace: 5,
+        misspelled: 0, unknown: 1, culture: 2, echo: 3, obscure: 3,
+        capitalization: 4, punctuation: 5, doublespace: 6,
       };
       var rows = [];
 
@@ -1043,7 +1458,16 @@ var McPhee = (function () {
           rank: SECTION_RANK[parts[1]],
           start: group.start,
           spans: group.spans,
-          el: wordRow(parts[0], parts[1], group.count, group.start),
+          el: wordRow(parts[0], parts[1], group.count),
+        });
+      });
+
+      cultureGroups.forEach(function (group, value) {
+        rows.push({
+          rank: SECTION_RANK.culture,
+          start: group.start,
+          spans: group.spans,
+          el: cultureRow(value, group.expected, group.count),
         });
       });
 
@@ -1066,7 +1490,7 @@ var McPhee = (function () {
           rank: SECTION_RANK[group.kind],
           start: group.start,
           spans: group.spans,
-          el: panelRow(group.start, [label], dismiss, sel),
+          el: panelRow([label], null, dismiss, sel),
         });
       });
 
@@ -1093,7 +1517,7 @@ var McPhee = (function () {
             rank: SECTION_RANK.capitalization,
             start: issue.start,
             spans: [[issue.start, issue.end]],
-            el: panelRow(issue.start, [label, capBtn], null, capSel),
+            el: panelRow([label, capBtn], ignoreButton(issue.value), null, capSel),
           });
         } else if (issue.kind === "punctuation") {
           var ptext = document.createElement("span");
@@ -1101,7 +1525,7 @@ var McPhee = (function () {
           var pSel = selectButton(function (i) {
             return i.kind === "punctuation";
           });
-          var prow = panelRow(issue.start, [ptext], null, pSel);
+          var prow = panelRow([ptext], null, null, pSel);
           prow.classList.add("mcphee-panel-note");
           rows.push({
             rank: SECTION_RANK.punctuation,
@@ -1134,12 +1558,15 @@ var McPhee = (function () {
           rank: SECTION_RANK.doublespace,
           start: firstDoubleSpaceStart,
           spans: doubleSpaceSpans,
-          el: panelRow(firstDoubleSpaceStart, [slabel, collapseBtn], null, sSel),
+          el: panelRow([slabel, collapseBtn], null, null, sSel),
         });
       }
 
       rows.sort(function (a, b) { return a.rank - b.rank || a.start - b.start; });
-      rows.forEach(function (r) { container.appendChild(r.el); });
+      rows.forEach(function (r) {
+        wireRow(r);
+        container.appendChild(r.el);
+      });
       rowMeta = rows;
 
       var dictLine = document.createElement("div");
@@ -1218,10 +1645,13 @@ var McPhee = (function () {
     window.addEventListener("scroll", onViewportChange, true);
     textarea.addEventListener("keyup", onCaretMove);
     textarea.addEventListener("click", onCaretMove);
+    applyRuleState();
     render();
 
     return {
       refresh: render,
+      setFormality: setFormality,
+      getFormality: function () { return currentProfile; },
       detach: function () {
         clearTimeout(debounceTimer);
         clearTimeout(viewportTimer);

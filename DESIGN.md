@@ -156,6 +156,81 @@ Still to build: fuseki.net dictionary-sync endpoint integration with a
 `storage.sync` mirror, optional overlay marks for textareas, per-guard
 profile/blockOn overrides, and an AMO-signed build.
 
+## Overlay correctness (v3.4.0): how we never show wrong highlights
+
+Misaligned highlights were observed repeatedly during development. This
+section is the systematic answer: why they happen, why the architecture is
+what it is, and the invariants that now make wrongness self-detecting.
+
+### Why not a different library or API?
+
+Every option for coloring text inside a `<textarea>` was considered:
+
+- **CSS Custom Highlight API** (`::highlight()`): the modern right answer
+  for DOM text — but it operates on Ranges over text nodes and cannot see
+  inside a textarea's value. Not applicable.
+- **contenteditable / editor frameworks** (CodeMirror, Monaco,
+  ProseMirror): these own the text surface, so their highlights can never
+  drift — but they replace the textarea, its native undo, its mobile
+  behavior, its form semantics, and every consumer's existing wiring.
+  McPhee's contract is "drop in next to a plain textarea", so owning the
+  surface is out.
+- **Mirror-div overlay** (what McPhee and every textarea-highlighting
+  library — highlight-within-textarea etc. — uses): the only approach
+  compatible with keeping the native textarea. Its single failure mode is
+  *divergence*: the mirror wrapping differently than the textarea.
+
+So the architecture keeps the mirror, and treats divergence as a detectable,
+recoverable error rather than a hope.
+
+### The two invariants
+
+After every render these must hold, or the marks are lies:
+
+1. **Content parity** — `backdrop.textContent === textarea.value + "\n"`
+   (the trailing newline is the scroll-parity line). Guarantees every mark
+   sits on exactly the characters the analysis measured.
+2. **Wrap parity** — `|backdrop.scrollHeight − textarea.scrollHeight| ≤ 2`.
+   Same text + same metrics + same width ⇒ same wrap points ⇒ same height;
+   a height difference is direct evidence the layouts diverged (fonts,
+   zoom, box-sizing, site CSS, anything).
+
+### The enforcement ladder
+
+1. Every render verifies both invariants.
+2. First violation: automatic self-repair — re-mirror all wrap-affecting
+   computed styles, re-render, re-verify (handles late-loading fonts, theme
+   flips, zoom).
+3. Still violated: **fail closed.** The overlay hides itself, warns on the
+   console with diagnostics, and retries on the background poll until it
+   verifies again. A missing highlight is an inconvenience; a misplaced one
+   is misinformation. (Same philosophy as the extension's hard block.)
+
+### Known divergence causes, each with its defense
+
+| cause | defense |
+| --- | --- |
+| box-sizing mismatch (content-box textareas) | backdrop forced to border-box, sized from the textarea's client box (v3.0.1) |
+| vertical scrollbar shrinking wrap width | width taken from client box, not offset box |
+| late-loading fonts / theme switch / zoom | styles re-mirrored on every forced refresh + on re-enable (v3.2.0); invariant check catches the rest |
+| site CSS restyling textareas | `white-space`, `overflow-wrap`, `word-break`, `tab-size`, `direction` mirrored explicitly (v3.2.0) |
+| programmatic `.value` writes with no event | 700 ms background poll re-renders on any value change |
+| stale geometry after element resize | ResizeObserver re-syncs; `refresh(true)` re-measures everything |
+| anything unforeseen | the two invariants + fail-closed hiding |
+
+### Rules for future work (the guide)
+
+- Never write a mark's position from anything but offsets computed against
+  the exact string that was rendered.
+- Never style the backdrop's text metrics independently of the textarea —
+  every wrap-affecting property must be mirrored or pinned identical.
+- Any new render path must end in the invariant check; there is exactly one
+  place that writes `backdrop.innerHTML` (keep it that way).
+- When adding mark types, marks must wrap text spans only — never insert or
+  remove characters (content parity would break instantly and visibly).
+- Prefer hiding to guessing: any state where correctness is unprovable
+  renders as no overlay, not a best-effort overlay.
+
 ## Versioning and distribution
 
 - Canonical repo: `C:\proj\mcphee` (git). `McPhee.version` +

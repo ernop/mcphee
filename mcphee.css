@@ -70,13 +70,17 @@
 /* Obscure repeat: a rare word used more than once in the text — light green. */
 .mcphee-mark-obscure { background: #d5efd5; }
 
-/* Gentle pulse when the issue's panel row is hovered, so the eye lands on
-   the mark right after the hover-scroll. */
-.mcphee-mark-flash {
-  animation: mcphee-flash 650ms ease-in-out 2;
+/* Culture: lowercase nation/group/language/religion name — gentle teal. */
+.mcphee-mark-culture { background: #c9ecea; }
+
+/* Hover pulse: runs ONLY while the pointer is on a panel row — the class is
+   added on mouseenter and removed on mouseleave, so it starts and stops
+   instantly with no trailing animation. */
+.mcphee-mark-pulse {
+  animation: mcphee-pulse 700ms ease-in-out infinite;
 }
 
-@keyframes mcphee-flash {
+@keyframes mcphee-pulse {
   50% {
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
     filter: saturate(2.5);
@@ -103,15 +107,81 @@
 .mcphee-panel-recheck { color: #374151; border-color: #d1d5db; }
 .mcphee-panel-recheck:hover { background: #f3f4f6; }
 
-/* Three fixed slots — content | dict-action | select — so the "+ dict" /
-   "dismiss" and "select" buttons align vertically across every row. */
+.mcphee-panel-headerbtns {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Formality chooser: three always-visible button-shaped choices plus the
+   rule-config toggle. The selected level is a thick-bordered, obviously
+   different button — never an underline. */
+.mcphee-formality {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.mcphee-formality-btn,
+.mcphee-formality-config {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+}
+
+.mcphee-formality-selected,
+.mcphee-formality-selected:hover {
+  border: 3px solid #2563eb;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-weight: 700;
+}
+
+/* Config + ignored-list sections. */
+.mcphee-config {
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  background: #fafafa;
+}
+
+.mcphee-config-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.mcphee-config-line input[type="number"] {
+  width: 72px;
+  font-size: 12px;
+  padding: 1px 4px;
+}
+
+/* Transient "undo ignore" chip, self-removes after 3 seconds. */
+.mcphee-undo-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  border: 1px dashed #d1d5db;
+  border-radius: 6px;
+  background: #fffbeb;
+  font-size: 12px;
+}
+
+/* Four fixed slots — content | ignore | dict-action | select — so every
+   action column aligns vertically across rows. */
 .mcphee-panel-item {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 62px 52px;
+  grid-template-columns: minmax(0, 1fr) 52px 62px 52px;
   align-items: center;
   gap: 6px;
   padding: 4px 0;
   border-bottom: 1px solid #e5e7eb;
+  cursor: pointer;
 }
 
 .mcphee-panel-main {
@@ -147,6 +217,7 @@
 .mcphee-panel-word-doublespace { background: #ffe98a; padding: 0 4px; border-radius: 3px; }
 .mcphee-panel-word-echo { background: #e6d9f7; padding: 0 4px; border-radius: 3px; }
 .mcphee-panel-word-obscure { background: #d5efd5; padding: 0 4px; border-radius: 3px; }
+.mcphee-panel-word-culture { background: #c9ecea; padding: 0 4px; border-radius: 3px; }
 
 .mcphee-panel-note { color: #92400e; }
 
@@ -162,9 +233,10 @@
 .mcphee-panel-btn:hover { background: #f3f4f6; }
 .mcphee-panel-adddict { border-style: dashed; }
 
-/* The dict/dismiss and select buttons fill their grid slots so the columns
-   read as clean vertical lines. */
+/* The ignore/dict/dismiss/select buttons fill their grid slots so the
+   columns read as clean vertical lines. */
 .mcphee-panel-item > .mcphee-panel-adddict,
+.mcphee-panel-item > .mcphee-panel-ignore,
 .mcphee-panel-item > .mcphee-panel-select {
   width: 100%;
   padding-left: 0;
@@ -175,6 +247,10 @@
 /* "Move cursor here": selects the issue's text in the textarea. */
 .mcphee-panel-select { color: #2563eb; border-color: #93c5fd; }
 .mcphee-panel-select:hover { background: #eff6ff; }
+
+/* Persistent per-word mute. */
+.mcphee-panel-ignore { color: #6b7280; border-color: #d1d5db; }
+.mcphee-panel-ignore:hover { background: #f3f4f6; }
 
 .mcphee-panel-dictcount {
   margin-top: 6px;

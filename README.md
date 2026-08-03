@@ -33,6 +33,7 @@ highlights:
 | `mcphee-mark-punctuation` | text ends without terminal punctuation (strict profile) | orange-outlined box on the last character |
 | `mcphee-mark-echo` | the same content word reused within 50 words (both occurrences) | light lavender block |
 | `mcphee-mark-obscure` | a rare word (outside the top 10,000 by frequency) used 2+ times in the text | light green block |
+| `mcphee-mark-culture` | a nation/group/language/religion name written lowercase ("japanese", "usa") | gentle teal block |
 
 ## Files
 
@@ -100,15 +101,29 @@ ctl.setEnabled(false);    // toggle off (restores native browser spellcheck)
 ctl.detach();
 
 // Live issues panel: suggestion buttons (replace-all, undo-preserving),
-// add-to-dictionary, capitalize, collapse extra spaces; hovering a row
-// scrolls the textarea to that issue's location, and every row's `select`
-// button focuses the textarea with the issue's text selected. The header's
-// "↻ recheck" button force-regenerates the overlay and the panel.
+// add-to-dictionary, ignore (persistent per-word mute with a 3s undo chip
+// and an "ignored (N)" manager), capitalize, collapse extra spaces.
+// Hovering a row scrolls the textarea to the issue and pulses EVERY
+// occurrence for exactly as long as the pointer stays; clicking anywhere on
+// the row selects the issue's text (same as its `select` button). The
+// header's "↻ recheck" button force-regenerates the overlay and the panel.
+// A formality chooser (casual/normal/formal -> the three profiles) is
+// always visible, persisted per origin; its ⚙ config opens per-rule
+// checkboxes and the repetition knobs, also persisted per origin.
 // With a controller the panel stays linked to the text both ways: rows
 // whose occurrences are all scrolled off screen dim (followViewport), and
 // the row nearest the caret is highlighted and scrolled into view in the
 // panel (followCaret) — both default on, pass false to disable:
-const panel = sw.attachPanel({ textarea, container: sidebarDiv, controller: ctl });
+const panel = sw.attachPanel({
+  textarea, container: sidebarDiv, controller: ctl,
+  // formalityStorageKey: "mcphee_formality",
+  // ruleOverridesStorageKey: "mcphee_rule_overrides",
+});
+panel.setFormality("strict"); panel.getFormality();
+
+// Persistent per-word mute (what the panel's ignore buttons call):
+sw.ignoreWord("Helbro"); sw.unignoreWord("Helbro");
+sw.listIgnoredWords(); sw.unignoreAll();
 
 // One-click local fix, applied through the browser's editing pipeline so
 // Ctrl+Z still works (one undo step):
@@ -172,22 +187,67 @@ to say "fuseki" as often as it likes, so adding a word to the dictionary is
 the permanent repetition opt-out. The panel's `dismiss` button
 (`sw.ignoreRepeat(word)`) is the session-scoped one.
 
-## Rule profiles
+## Rule catalog — exact parameters
 
-| profile | misspelled | unknown | doublespace | sentenceCapitalization | terminalPunctuation | echo | obscureRepeat |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `standard` | on | on | on | off | off | on | on |
-| `strict` | on | on | on | on | on | on | on |
-| `casual` | on | off | on | off | off | off | off |
+Every rule, precisely what fires it, and what exempts it:
 
-`casual` is the "japanese" mode: lowercase proper nouns and unpunctuated prose
-are intentional, so only genuine non-words and double spaces are flagged.
+- **misspelled** (pink) — a word matching `[A-Za-z]+(?:['’][A-Za-z]+)*`,
+  entirely lowercase, ≥2 letters, not in the Hunspell dictionary, whose
+  Capitalized form is also not in the dictionary. Exempt: personal
+  dictionary, `extraWords`, ignore list.
+- **unknown** (blue) — a word the dictionary doesn't know that is shaped
+  like a name/acronym/identifier (contains any uppercase), OR a lowercase
+  word whose Capitalized form IS in the dictionary (a casually-lowercased
+  proper noun — never "corrected" to an unrelated word). Same exemptions.
+- **doublespace** (yellow) — a run of 2+ spaces that is neither
+  line-leading indentation nor exactly two spaces after sentence-ending
+  punctuation `.` `!` `?` `…` (closing quotes/brackets allowed between).
+  Sentence separators grown to 3+ spaces collapse back to two, everything
+  else to one.
+- **culture** (teal) — a word from the nation/group/language/religion list
+  written entirely lowercase ("japanese", "usa", "english"); the fix is the
+  properly-cased form (Japanese, USA). The default list is conservative:
+  words whose lowercase form is a common English word (turkey, china,
+  polish, black as a color...) are excluded to avoid false positives — add
+  per-project entries via `options.cultureWords` (e.g. "black" for writing
+  where the ethnonym reading dominates). Exempt: personal dictionary,
+  `extraWords`, ignore list.
+- **sentenceCapitalization** (orange) — a lowercase dictionary word at a
+  sentence start (after `.` `!` `?` `…` + whitespace, or text start).
+- **terminalPunctuation** (orange outline) — the text's last
+  non-whitespace character is not sentence-ending punctuation or a closer.
+- **echo** (lavender) — the same content word (case-insensitive,
+  possessive-stripped, plural-folded) reappears within `echoWindowWords`
+  words (default 50). Exempt: words under 4 letters, stopwords, words
+  ranked more common than `echoCommonRank` (default 2000), dictionary and
+  extra words, session dismissals.
+- **obscureRepeat** (green) — a word rarer than `obscureRank` (default
+  10000) or absent from the frequency list, used 2+ times anywhere. Same
+  exemptions; inert without `freqUrl`.
+
+## Formality levels (rule profiles)
+
+The panel shows these as the always-visible chooser casual / normal /
+formal; the selected level persists per origin.
+
+| profile (chooser label) | misspelled | unknown | doublespace | culture | sentenceCapitalization | terminalPunctuation | echo | obscureRepeat |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `standard` ("normal") | on | on | on | on | off | off | on | on |
+| `strict` ("formal") | on | on | on | on | on | on | on | on |
+| `casual` ("casual") | on | off | on | off | off | off | off | off |
+
+`casual` is the "japanese" mode: lowercase proper nouns, lowercase i, and
+unpunctuated prose are intentional, so only genuine non-words and double
+spaces are flagged. `strict` is the full rigamarole: complete sentences,
+capitalized sentence starts, terminal punctuation.
+
 Every entry point (`create`, `attach`, `attachPanel`, `analyze`, `localFix`,
 `applyFixes`, `guardForm`) accepts `{ profile }` and/or per-rule `{ rules }`
 overrides; rules win over the profile, the profile wins over the instance
-default. Word lists (extraWords, personal dictionary) apply regardless of
-profile — that layering follows cSpell's model (word lists union; settings
-override).
+default. The panel's ⚙ config writes per-origin overrides on top of the
+chosen profile (localStorage `mcphee_rule_overrides`). Word lists
+(extraWords, personal dictionary, ignore list) apply regardless of profile —
+that layering follows cSpell's model (word lists union; settings override).
 
 ## Design notes
 
@@ -195,6 +255,13 @@ override).
   (transparent text, colored mark backgrounds, textarea background made
   transparent). Geometry mirrors the textarea's client box so a vertical
   scrollbar can't skew wrapping.
+- **Overlay correctness is enforced, not assumed**: after every render the
+  controller checks that the backdrop's text equals the textarea's value
+  and that both boxes wrapped identically (equal scrollHeights). A failed
+  check triggers one automatic re-mirror + re-render; if it still fails the
+  overlay hides itself rather than display misplaced highlights, and keeps
+  retrying in the background until it verifies. Full analysis in DESIGN.md
+  ("Overlay correctness").
 - Classification is deliberately heuristic and predictable, not clever:
   anything capitalized/ALLCAPS/camelCase that the dictionary doesn't know is
   "unknown" (blue), on the theory that names and jargon shouldn't nag. A
@@ -240,4 +307,4 @@ Known consumers:
 
 - `C:\proj\multiImageClient\MultiImageClient\Ui\wwwroot\spellwell\` (v1.0.0,
   still under the old SpellWell name)
-- `C:\proj\fuseki4_ai\static\mcphee\` (v2.0.0, deployed to fuseki.net 2026-08-02)
+- `C:\proj\fuseki4_ai\static\mcphee\` (v3.4.0, deployed to fuseki.net 2026-08-02)
