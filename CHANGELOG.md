@@ -1,5 +1,31 @@
 # McPhee changelog
 
+## 3.7.0 — 2026-08-03
+
+Fixes the disappearing highlights, separates the repetition sections, and
+rebuilds the test setup.
+
+- **Host-page `mark` styling no longer kills the overlay.** CSS frameworks
+  (Bootstrap's reboot among them) pad `mark` elements; with hundreds of
+  marks the padding compounded into extra line-wraps in the backdrop, the
+  wrap-parity integrity check failed, and the overlay correctly hid itself —
+  leaving no highlights and no hover pulse while the panel kept listing
+  issues. Backdrop marks now carry a full geometry reset (padding, margin,
+  border, font, spacing) so a mark occupies exactly its text.
+- Echo (lavender) and obscure repeat (green) are separate panel sections;
+  they previously shared one section and interleaved by document position.
+- Suggestions are skipped for words longer than 24 characters: Hunspell
+  suggestion cost explodes with length, and a pasted long token could
+  freeze the panel for minutes. No real word loses anything.
+- Tests reorganized by area. `test/node/` holds the analysis suites (rules,
+  exclusions, caret) on a shared harness, with caret tests rewritten in
+  caret notation ("|" marks the caret in plain strings — no offset
+  arithmetic). `test/browser/suite.py` is a Playwright suite covering
+  overlay visibility, integrity across a content matrix (including
+  host-page mark styling), hover pulse, panel section order, and suggestion
+  acceptance, using the overlay's own integrity self-check as the oracle.
+  `npm test` runs the Node layer.
+
 ## 3.6.2 — 2026-08-02
 
 Accepting a suggestion now drops you to the next item instead of losing

@@ -34,6 +34,20 @@
 }
 
 .mcphee-backdrop mark {
+  /* Geometry reset. Host pages commonly style `mark` (Bootstrap's reboot
+     adds horizontal padding), and ANY box perturbation makes the backdrop
+     wrap differently than the textarea — with hundreds of marks the drift
+     compounds into whole extra lines, the wrap-parity check fails, and the
+     overlay fail-closes to hidden. A mark must occupy exactly its text. */
+  padding: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  word-spacing: inherit;
+  white-space: inherit;
   color: transparent;
   border-radius: 3px;
 }

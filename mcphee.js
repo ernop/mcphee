@@ -79,7 +79,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.6.2";
+  var VERSION = "3.7.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -493,7 +493,14 @@ var McPhee = (function () {
     return "misspelled";
   };
 
+  // Hunspell suggestion cost grows explosively with word length; past any
+  // realistic typo there is nothing useful to offer anyway, and a pasted
+  // long token (a URL fragment, a run of characters) must never freeze the
+  // panel. 24 chars comfortably covers real English words.
+  var MAX_SUGGEST_LENGTH = 24;
+
   Checker.prototype.suggest = function (word, limit) {
+    if (word.length > MAX_SUGGEST_LENGTH) return [];
     var key = word + "\u0000" + (limit || 3);
     if (!this.suggestionCache.has(key)) {
       this.suggestionCache.set(key, this.dict.suggest(word.replace(/\u2019/g, "'"), limit || 3));
@@ -1578,11 +1585,14 @@ var McPhee = (function () {
       });
 
       // Sections by issue type — misspelled (red), unknown (blue), culture
-      // (teal), repetition, capitalization, punctuation, spaces — and
-      // document order (first occurrence) within each section.
+      // (teal), echo (lavender), obscure repeat (green), capitalization,
+      // punctuation, spaces — and document order (first occurrence) within
+      // each section. Echo and obscure are separate sections: same-colored
+      // rows read as one block, so mixing lavender and green rows was
+      // disorienting.
       var SECTION_RANK = {
-        misspelled: 0, unknown: 1, culture: 2, echo: 3, obscure: 3,
-        capitalization: 4, punctuation: 5, doublespace: 6,
+        misspelled: 0, unknown: 1, culture: 2, echo: 3, obscure: 4,
+        capitalization: 5, punctuation: 6, doublespace: 7,
       };
       var rows = [];
 

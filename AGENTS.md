@@ -68,16 +68,51 @@ Technical:
   behavior change.
 - [extension/README.md](extension/README.md) — the Firefox extension:
   build, load, teach.
-- `test/` — Node smoke suites for the analysis layer. Run with
-  `node test/<file>` from the repo root; all must pass before a release.
+- `test/` — two layers, split by what each can see:
+  - `test/node/` — analysis-layer suites in a VM sandbox: rules, exclusion
+    zones, and caret mapping written in caret notation ("|" marks the caret,
+    so every expectation is a picture of the textarea, never offset
+    arithmetic). Run: `npm test`.
+  - `test/browser/suite.py` — Playwright suite for what Node cannot see:
+    overlay visibility, wrap-parity integrity across a content matrix,
+    hover pulse, panel section order, and suggestion acceptance. The
+    library's own integrity self-check is the oracle — the tests never do
+    pixel math. Run: `python test/browser/suite.py`.
+
+  Both must pass before a release.
 
 ## Working Rules for Agents
 
-- Distribution is copy-the-folder. The creator's other projects take
-  verbatim copies of this folder; keep the folder self-contained.
+- Distribution is copy-the-folder; keep the folder self-contained. (Current
+  practice, agent-maintained. The creator has expressed no opinion on
+  distribution, so nothing here is doctrine — do not elaborate on it.)
 - The overlay's correctness policy is fail-closed: never display a highlight
   that might be misaligned. See DESIGN.md "Overlay correctness" before
   touching any render path.
-- Form guards are hard blocks. No escape hatches, no overrides, no lazy
-  loading. If the mechanism works, rely on it.
-- Run the Node smoke tests before committing library changes.
+- Run both test layers before committing library changes: `npm test` and
+  `python test/browser/suite.py`.
+- Complexity control is periodic judgment, not standing metrics. The creator
+  rejects test coverage as a metric and considers permanent meta-machinery
+  premature. The useful check is to look at an area and ask whether anything
+  in it is crazy or senseless because the organization system failed — and
+  then fix the organization, not the number.
+
+### Suspect patterns: "belt and suspenders", "fallback", "escape hatch"
+
+When a design reaches for words like "belt and suspenders", "fallback",
+"defense in depth", "just in case", or "escape hatch", stop — in the
+creator's words, those words instantly make us wonder "this code probably
+could be better without using this pattern." The words signal that the
+primary mechanism is not trusted, and the right response is almost never a
+second mechanism. Notice the word, suspect the design, and in most cases
+redo it:
+
+1. Make the primary mechanism actually reliable, then rely on it alone.
+2. If it cannot be made reliable, replace it rather than papering over it.
+3. A second layer is legitimate only when the layers do genuinely different
+   jobs. The overlay hiding itself on a failed integrity check is not a
+   fallback — fail-closed IS the correctness policy, with no degraded
+   display behind it.
+
+Form guards are the standing example: hard blocks, no escape hatches, no
+overrides, no lazy loading. The guard works, so we rely on it.

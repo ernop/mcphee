@@ -110,6 +110,53 @@ Linked from [AGENTS.md](../AGENTS.md).
   immediately. Intent: on sites where a typo cannot be fixed after posting,
   submission with busted words must be impossible.
 
+## 2026-08-03 — Echo and obscure repeats are separate panel sections
+
+- Creator, on seeing lavender and green rows interleaved: "the green and
+  purple categories seem like they're mixed together - why?" They had shared
+  one "repetition" section sorted by document position. Now each issue type
+  is its own contiguous section (misspelled, unknown, culture, echo, obscure,
+  capitalization, punctuation, spaces), document-ordered within itself —
+  same-colored rows read as one block.
+
+## 2026-08-03 — Suspect-pattern rule elevated to a general working rule
+
+- Creator: "let's elevate and rewrite this 'form guards are...' thing to be
+  more proper as a rule that explains how generally we NOTICE and suspect
+  and redo, most cases, when something feels or seems like a 'belt and
+  suspenders', 'fallback', etc. those words instantly make us wonder 'this
+  code probably could be better without using this pattern.'" The rule now
+  lives in AGENTS.md as "Suspect patterns", with form guards as the standing
+  example rather than the whole rule.
+
+## 2026-08-03 — Complexity control: judgment, not metrics
+
+- Creator: standing meta-machinery is premature ("meta-seems a bit early to
+  go full meta forever like this?"), and "I really don't like test coverage
+  as some kind of metric itself, not good." What is wanted instead: a
+  repeatable check "that we're not doing things that are just crazy and
+  senseless all because we don't have a good organization system." Recorded
+  as a working rule in AGENTS.md: periodic judgment passes over an area,
+  fixing the organization rather than optimizing a number.
+- On distribution documentation: the creator has no opinion on distribution
+  ("I'm not sure why we have written such a detailed bit here when I have no
+  opinion") — the copy-the-folder practice stays as an agent-maintained
+  working note, not doctrine, and is kept brief.
+
+## 2026-08-03 — Testing approach: natural states, no caret math
+
+- Creator: "reorganize the mcphee selftesting setup much more clearly so
+  that we can at least get some evalidation for it all... if we don't want
+  to actually do detailed karet math? or some 'natural' way to do this? how
+  do code editors test themselves?" The agent concluded, following how
+  editors (CodeMirror, ProseMirror, VS Code) test cursor behavior:
+  - caret notation — "|" marks the caret in plain strings, so every
+    expectation is a picture of the textarea ("teh |cat" → "the |cat");
+  - a real-browser Playwright suite for geometry, using the library's own
+    integrity self-check as the oracle instead of pixel assertions;
+  - tests organized by area (`test/node/` by rule area, `test/browser/`),
+    not by the version that introduced them.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

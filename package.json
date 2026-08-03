@@ -1,0 +1,10 @@
+{
+  "name": "mcphee",
+  "version": "3.7.0",
+  "description": "A personal, customizable, minimal spellchecker — and some other fun stuff: it finds repeated obscure words, catches mistaken reuse of the same word close together, and does better spellchecking than the pitiful checkers Google and Apple ship.",
+  "main": "mcphee.js",
+  "scripts": {
+    "test": "node test/node/run-all.js"
+  },
+  "license": "MIT"
+}
