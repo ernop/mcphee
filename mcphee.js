@@ -81,7 +81,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.8.1";
+  var VERSION = "3.8.2";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;

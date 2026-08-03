@@ -1,5 +1,15 @@
 # McPhee changelog
 
+## 3.8.2 — 2026-08-03
+
+- Fixes invisible highlights introduced in 3.7.0: the geometry reset on
+  `.mcphee-backdrop mark` included `background: transparent`, and that
+  selector (class + element) outweighs the single-class category rules —
+  every mark rendered colorless while classes, geometry, and integrity all
+  passed. The reset no longer touches background. The browser suite now
+  asserts actual paint: every mark's computed background is non-transparent
+  and the hover highlight computes to the exact amber.
+
 ## 3.8.1 — 2026-08-03
 
 - Contractions (won't, don't, they're, could've, ...) join the stopword

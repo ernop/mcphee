@@ -89,6 +89,19 @@ def main():
         ok(st["marks"] > 0, "marks rendered")
         ok(not any("integrity" in w for w in warnings), "no integrity warnings on load")
 
+        # --- marks actually PAINT: every category mark has a non-transparent
+        # computed background (classes and geometry alone once passed while a
+        # specificity bug blanked every color) ---
+        paint = page.evaluate("""() => {
+            const bad = [];
+            document.querySelectorAll(".mcphee-backdrop mark").forEach(m => {
+                const bg = getComputedStyle(m).backgroundColor;
+                if (bg === "rgba(0, 0, 0, 0)" || bg === "transparent") bad.push(m.className);
+            });
+            return bad.slice(0, 5);
+        }""")
+        ok(len(paint) == 0, f"every mark paints a visible background ({paint})")
+
         # --- hover highlight: solid color change, instant on/off, no motion ---
         page.locator(".mcphee-panel-item").first.hover()
         page.wait_for_timeout(150)
@@ -97,11 +110,14 @@ def main():
             const cs = marks[0] ? getComputedStyle(marks[0]) : null;
             return {
                 count: marks.length,
+                background: cs ? cs.backgroundColor : null,
                 animation: cs ? cs.animationName : null,
                 transition: cs ? cs.transitionDuration : null,
             };
         }""")
         ok(hov["count"] >= 1, "hovering a row highlights its mark(s)")
+        ok(hov["background"] == "rgb(255, 176, 32)",
+           f"hover paints the solid amber background ({hov['background']})")
         ok(hov["animation"] == "none", f"no animation on the hover highlight ({hov['animation']})")
         ok(hov["transition"] in ("0s", None) or all(t.strip() == "0s" for t in (hov["transition"] or "").split(",")),
            f"no transition on the hover highlight ({hov['transition']})")
