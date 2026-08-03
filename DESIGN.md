@@ -1,11 +1,10 @@
 # McPhee cross-project design
 
-One personal spellcheck system, reused everywhere: fuseki4_ai article editor,
-multiImageClient prompt box, stalin-mode-style one-off pages, and the McPhee
-Guard Firefox extension (`extension/`) that gates submission on arbitrary
-sites. This document
+One personal spellcheck system, reused everywhere: the creator's article
+editors, prompt boxes, one-off pages, and the McPhee Guard Firefox extension
+(`extension/`) that gates submission on arbitrary sites. This document
 records the architecture decisions and the not-yet-built roadmap so each
-consumer can catch up to master with a folder copy and minor wiring.
+host copy can catch up to master with a folder copy and minor wiring.
 
 ## Personalization model (borrowed from cSpell)
 
@@ -35,8 +34,8 @@ be submitted with errors is `strict` + `guardForm`.
 
 ## Personal dictionary sync (designed, not yet built)
 
-Problem: localStorage is per-origin *and* per-browser. Words added in
-multiImageClient still nag in fuseki; words added on the desktop nag on the
+Problem: localStorage is per-origin *and* per-browser. Words added in one
+host app still nag in another; words added on the desktop nag on the
 laptop.
 
 Options considered:
@@ -46,17 +45,17 @@ Options considered:
   sync it; only reachable from the extension, not from ordinary pages.
   Verdict: fine as the extension's own cache, wrong as the canonical store.
 - **Grammarly/LanguageTool model** (account-backed server dictionary): correct
-  architecture, and we already run a personal always-on server — fuseki.net.
+  architecture, and the creator already runs a personal always-on server.
 - **Flat file in each repo**: no good; per-machine, needs commits for words.
 
-Decision: **fuseki.net is the dictionary hub**; every client keeps localStorage
-as an offline cache and union-merges with the server.
+Decision: **the creator's server is the dictionary hub**; every client keeps
+localStorage as an offline cache and union-merges with the server.
 
-Contract (to implement in fuseki4_ai behind the authenticated admin prefix):
+Contract (to implement on that server behind its authenticated admin prefix):
 
 ```text
 GET  /<ADMIN_PREFIX>/api/mcphee/dict
-     -> { "updated": "<iso8601>", "words": ["fuseki", ...] }
+     -> { "updated": "<iso8601>", "words": ["anaphora", ...] }
 POST /<ADMIN_PREFIX>/api/mcphee/dict
      body { "add": ["word", ...], "remove": ["word", ...] }
      -> same shape as GET (post-merge state)
@@ -70,9 +69,9 @@ POST /<ADMIN_PREFIX>/api/mcphee/dict
   through an explicit UI, POSTing `{remove}` — union sync can never resurrect
   them accidentally as long as removal also deletes from the local cache.
 - Conflict story: none needed. Adds are a set union; concurrent adds commute.
-- The Firefox extension syncs the same endpoint (its host permission already
-  includes fuseki.net) and additionally mirrors to `storage.sync` (sharded,
-  ~8 KB per chunk) so a fresh browser profile works before first fuseki login.
+- The Firefox extension syncs the same endpoint (its host permissions already
+  include that server) and additionally mirrors to `storage.sync` (sharded,
+  ~8 KB per chunk) so a fresh browser profile works before first server login.
 
 ## Form-submission gating (built: `guardForm`)
 
@@ -109,7 +108,7 @@ Design decisions:
   getting out of the way (dismiss).
 - **Two exemption tiers**: personal-dictionary/extraWords words are
   permanently exempt (topic vocabulary must be allowed to repeat — an article
-  about fuseki says "fuseki" fifty times), while `ignoreRepeat(word)` is
+  about leopards says "leopard" fifty times), while `ignoreRepeat(word)` is
   session-only (deliberate anaphora in one article says nothing about the
   next).
 - Plural/possessive folding is naive (strip `'s`, strip one trailing `s` from
@@ -152,9 +151,9 @@ Built (v0.1.0):
 - **Popup**: teach button, per-origin guard list with remove, global kill
   switch, dictionary word count.
 
-Still to build: fuseki.net dictionary-sync endpoint integration with a
-`storage.sync` mirror, optional overlay marks for textareas, per-guard
-profile/blockOn overrides, and an AMO-signed build.
+Still to build: dictionary-sync endpoint integration with a `storage.sync`
+mirror, optional overlay marks for textareas, per-guard profile/blockOn
+overrides, and an AMO-signed build.
 
 ## Overlay correctness (v3.4.0): how we never show wrong highlights
 
@@ -233,17 +232,17 @@ After every render these must hold, or the marks are lies:
 
 ## Versioning and distribution
 
-- Canonical repo: `C:\proj\mcphee` (git). `McPhee.version` +
-  `CHANGELOG.md` are the contract; bump the version on every behavior change.
-- Distribution stays copy-the-folder: consumers can never break because master
-  changed, and there is no npm/build machinery to maintain for what is a
-  static folder. "Catching up to master" = re-copy + read the changelog diff
-  + adjust wiring if an API changed (avoided when possible; additions only).
-- Consumers and their pinned versions are listed in README "Distribution".
+- `McPhee.version` + `CHANGELOG.md` are the contract; bump the version on
+  every behavior change.
+- Distribution stays copy-the-folder: a host copy can never break because
+  master changed, and there is no npm/build machinery to maintain for what is
+  a static folder. "Catching up to master" = re-copy + read the changelog
+  diff + adjust wiring if an API changed (avoided when possible; additions
+  only).
 
 ## Non-goals
 
-- Grammar checking beyond the cheap deterministic rules (that's an LLM's job —
-  multiImageClient's separate Claude spellfix button covers it there).
+- Grammar checking beyond the cheap deterministic rules (that's an LLM's
+  job).
 - Multi-language dictionaries (en_US only until a real need appears).
 - Server-side rendering integration; McPhee is a client-side authoring aid.

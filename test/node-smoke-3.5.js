@@ -30,7 +30,7 @@ sandbox.fetch = (url) => {
   return Promise.resolve({ ok: true, text: () => Promise.resolve(read(rel)) });
 };
 
-const COMPONENT_RE = [/\{\{[\s\S]*?\}\}/g]; // fuseki's component blocks
+const COMPONENT_RE = [/\{\{[\s\S]*?\}\}/g]; // double-brace template blocks
 
 async function main() {
   const checker = await sandbox.McPhee.create({

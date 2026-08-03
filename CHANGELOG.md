@@ -1,4 +1,18 @@
-# McPhee changelog (SpellWell through v1.5.0)
+# McPhee changelog
+
+## 3.6.1 — 2026-08-02
+
+Documentation restructure; no behavior changes.
+
+- `AGENTS.md` is the master index: every doc is linked through it, and it
+  records the project's standing rules (public-text approval, product-only
+  README, no private information in public text) and the product decision
+  log (`docs/product-decisions.md`).
+- `README.md` rewritten as product-only. All technical material (files,
+  setup, API, rule catalog, profiles, design notes, distribution) moved to
+  `docs/integration.md`.
+- References to pre-release history and internal project details removed
+  from all documentation and code comments.
 
 ## 3.6.0 — 2026-08-02
 
@@ -24,9 +38,9 @@
   partner), no `localFix`/`applyFixes` edits, no panel replace-all or
   collapse touching them, and `concordance`/`repetitionReport` skip them.
   Accepted at `create` (instance default) and per call (`opts.exclude`;
-  pass `null` to disable). The host page knows its own markup: fuseki
-  excludes its `{{ }}` component blocks; other consumers might exclude
-  fenced code, template tags, or bare URLs.
+  pass `null` to disable). The host page knows its own markup: a wiki-style
+  editor might exclude its double-brace component blocks; other hosts might
+  exclude fenced code, template tags, or bare URLs.
 
 ## 3.4.0 — 2026-08-02
 
@@ -107,7 +121,7 @@
   restyles textareas.
 - Verified aligned in-browser across: programmatic phrase moves, real
   typing, toggle off → edit → toggle on, scrolling, element resize, and
-  110% zoom — on both the demo page and the fuseki article editor.
+  110% zoom — on both the demo page and a host article editor.
 
 ## 3.1.0 — 2026-08-02
 
@@ -137,9 +151,9 @@
   always `border-box` instead of mirroring the textarea's `box-sizing`.
   Mirroring content-box double-counted padding/borders, so the backdrop
   wrapped ~18px wider and every mark drifted leftward within wrapped lines.
-  Consumers with a global `* { box-sizing: border-box }` reset (the fuseki
-  editor) never saw it; the demo page did. Diagnosed with a computed-style
-  diff, verified pixel-aligned in-browser.
+  Hosts with a global `* { box-sizing: border-box }` reset never saw it;
+  the demo page did. Diagnosed with a computed-style diff, verified
+  pixel-aligned in-browser.
 - Panel rows no longer wrap: `.mcphee-panel-item` is `nowrap` with
   non-shrinking children. Give the panel container ~430px or more.
 
@@ -192,7 +206,7 @@ The Kedit `All` primitives, for building deep-look/concordance UIs:
 
 ## 2.0.0 — 2026-08-02
 
-Renamed SpellWell → **McPhee**, for John McPhee, who ran Kedit's `All`
+Renamed the library to **McPhee**, for John McPhee, who ran Kedit's `All`
 command over every piece to spot repeated distinctive words and bunched
 ordinary ones (*Draft No. 4*, "Structure") — the job this library's
 repetition detectors now do. (The v1.4.0 entry below credited the practice
@@ -200,13 +214,12 @@ to Peter Matthiessen; the program anecdote is McPhee's. Matthiessen's
 "you often do plagiarize yourself" quote is real but he worked by hand.)
 Breaking changes, all mechanical:
 
-- Global `SpellWell` → `McPhee`; files `spellwell.js/.css` → `mcphee.js/.css`;
-  CSS classes `spellwell-*` → `mcphee-*`; canonical repo `C:\proj\spellwell`
-  → `C:\proj\mcphee`.
-- Default localStorage key `spellwell_custom_dict` → `mcphee_custom_dict`.
-  Consumers with explicit keys are unaffected; consumers using the default
-  should `importWords` the old key once (fuseki does this migration).
-- No behavior changes. Historical changelog entries below keep the old name.
+- Global renamed to `McPhee`; files renamed to `mcphee.js/.css`; CSS class
+  prefix renamed to `mcphee-*`.
+- Default localStorage key renamed to `mcphee_custom_dict`. Hosts with
+  explicit keys are unaffected; hosts using the default should
+  `importWords` the old key once.
+- No behavior changes.
 
 ## 1.5.0 — 2026-08-02
 
@@ -275,8 +288,8 @@ Space-run policy rework:
 
 ## 1.1.0 — 2026-08-01
 
-Canonical repo established at `C:\proj\spellwell` (previously lived only as a
-drop-in inside multiImageClient).
+Standalone repo established (previously lived only as a drop-in inside a
+host project).
 
 - Rule profiles: `standard` (historical behavior), `strict`, `casual`
   (the "japanese" mode — no unknown-word/capitalization/punctuation nagging).
@@ -287,8 +300,8 @@ drop-in inside multiImageClient).
   terminal punctuation, orange-outlined last character). Capitalization is
   auto-fixable; punctuation is highlight-only.
 - Undo-preserving edits: new `applyFixes(textarea)` and all panel actions go
-  through `execCommand("insertText")` (fallback `setRangeText`), fixing the
-  fuseki-prototype bug where `.value` writes wiped the native undo stack.
+  through `execCommand("insertText")` (fallback `setRangeText`), fixing an
+  earlier prototype's bug where `.value` writes wiped the native undo stack.
 - `attachPanel({ textarea, container, controller })`: live issues panel with
   replace-all suggestion buttons, add-to-dictionary, capitalize, and
   collapse-double-spaces actions plus a personal-dictionary word count.
@@ -297,11 +310,10 @@ drop-in inside multiImageClient).
   buttons; unchanged-text resubmit within 6s overrides (escape hatch).
 - `importWords(words)`: union-merge for storage-key migration and future
   remote dictionary sync.
-- `SpellWell.version` and `SpellWell.profiles` exposed.
+- `version` and `profiles` exposed on the global.
 
 ## 1.0.0 — 2026-07-28
 
-First packaged drop-in, in multiImageClient (`Ui/wwwroot/spellwell/`): overlay
-highlighting (misspelled/unknown/doublespace), `localFix`, `analyze`,
-localStorage personal dictionary, `extraWords`, `autofixMap`. Grown from the
-fuseki4_ai article-editor prototype and stalin-mode.html.
+First packaged drop-in: overlay highlighting (misspelled/unknown/
+doublespace), `localFix`, `analyze`, localStorage personal dictionary,
+`extraWords`, `autofixMap`. Grown from two earlier private prototypes.

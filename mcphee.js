@@ -5,17 +5,11 @@
 // each use of a chosen word and the distance between occurrences: a
 // distinctive word got one appearance per piece, and bunched ordinary words
 // got respaced ("Draft No. 4", essay "Structure"). The repetition detectors
-// below automate that check. Known as SpellWell through v1.5.0.
+// below automate that check.
 //
-// CANONICAL HOME: C:\proj\mcphee (git). Consumer projects receive verbatim
-// copies of this folder; check McPhee.version against the canonical
-// CHANGELOG.md to see how far behind a copy is.
-//
-// Origin: grown out of the fuseki4_ai article-editor prototype (typo-js +
-// Hunspell en_US + localStorage custom dictionary) and the stalin-mode.html
-// screenshot editor; packaged so it can be copied into any project as a
-// folder (mcphee.js + mcphee.css + vendor/typo/{typo.min.js,en_US.aff,
-// en_US.dic}).
+// Distribution is copy-the-folder: host projects receive verbatim copies of
+// this folder (mcphee.js + mcphee.css + vendor/); check McPhee.version
+// against CHANGELOG.md to see how far behind a copy is.
 //
 // Usage:
 //   <link rel="stylesheet" href="mcphee/mcphee.css">
@@ -85,7 +79,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.6.0";
+  var VERSION = "3.6.1";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -99,8 +93,8 @@ var McPhee = (function () {
   // no-nagging mode for contexts where lowercase proper nouns ("japanese"),
   // lowercase i, and unpunctuated prose are the author's intent; "strict"
   // demands the full rigamarole: sentences start capitalized, text ends
-  // punctuated. Exact parameters for every rule are documented in README.md
-  // ("Rule catalog").
+  // punctuated. Exact parameters for every rule are documented in
+  // docs/integration.md ("Rule catalog").
   var PROFILES = {
     standard: {
       misspelled: true, unknown: true, doublespace: true,
@@ -263,7 +257,7 @@ var McPhee = (function () {
 
   // Replaces textarea[start..end) with `replacement` through the browser's
   // editing pipeline so the native undo stack survives (direct .value writes
-  // detach it — the original fuseki prototype's replaceWord bug).
+  // detach it — a bug an earlier prototype shipped with).
   // execCommand("insertText") is deprecated but remains the only
   // undo-integrated programmatic edit; setRangeText is the fallback.
   function replaceRange(textarea, start, end, replacement) {
@@ -295,8 +289,8 @@ var McPhee = (function () {
     // spacing, capitalization, culture, or repetition checks, and no fixes.
     // An array of global RegExps (each match is a zone) or a function
     // (text) -> [[start, end), ...]. The host page knows its own markup:
-    // fuseki excludes {{ }} component blocks, a code site might exclude
-    // fenced blocks, a URL-heavy site bare URLs.
+    // a wiki-style editor might exclude double-brace template blocks, a code
+    // site fenced blocks, a URL-heavy site bare URLs.
     this.exclude = options.exclude || null;
     // Persistent per-word mute: unlike +dict this doesn't teach the
     // dictionary anything, it just stops flagging the exact word.
