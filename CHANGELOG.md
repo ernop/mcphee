@@ -1,5 +1,20 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.6.0 — 2026-08-02
+
+- Culture by dictionary omission: a lowercase word the dictionary rejects
+  whose Capitalized form it knows (jupiter/Jupiter, friday/Friday,
+  virginians/Virginians) is provably a proper noun written lowercase — it
+  now surfaces as a teal culture issue with the one-click cased fix instead
+  of a vague blue unknown. A second probe catches ALLCAPS forms
+  (nasa → NASA; length >= 3 so "ok" is left alone). Both probes are
+  conservative by construction: turkey, china, polish, and black never fire
+  because their lowercase forms are ordinary dictionary words. The curated
+  nation/group/language list remains as a backstop for names the Hunspell
+  dictionary lacks, and `cultureWords` still adds per-project entries. Zero
+  extra dictionary lookups for the Capitalized probe — classify() had
+  already performed it.
+
 ## 3.5.0 — 2026-08-02
 
 - Exclusion zones: `options.exclude` — an array of global RegExps (each

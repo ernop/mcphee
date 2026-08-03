@@ -83,6 +83,24 @@ async function main() {
   const t6 = checker.analyze("zzqx and zzqx", { exclude: (text) => [[0, 4]] });
   assert(t6.filter(i => i.value === "zzqx").length === 1, "function-based ranges honored");
 
+  // --- v3.6.0: culture by dictionary omission ---
+  // The dictionary rejecting the lowercase form while knowing the cased
+  // form IS the proof the word is a proper noun written lowercase.
+  const c1 = checker.analyze("jupiter is bright on friday.");
+  assert(c1.some(i => i.kind === "culture" && i.value === "jupiter" && i.expected === "Jupiter"), "omission probe: jupiter -> Jupiter");
+  assert(c1.some(i => i.kind === "culture" && i.value === "friday" && i.expected === "Friday"), "omission probe: friday -> Friday");
+  assert(!c1.some(i => i.kind === "word" && i.value === "jupiter"), "probed word is culture, not blue unknown");
+  const c2 = checker.analyze("virginians eat turkey and polish china.");
+  assert(c2.some(i => i.kind === "culture" && i.value === "virginians" && i.expected === "Virginians"), "omission probe: virginians -> Virginians");
+  assert(c2.filter(i => i.kind === "culture").length === 1, "turkey/polish/china stay unflagged (lowercase forms are words)");
+  const c3 = checker.analyze("that is ok with nasa.");
+  assert(!c3.some(i => i.kind === "culture" && i.value === "ok"), "ok too short for the ALLCAPS probe");
+  assert(c3.some(i => i.kind === "culture" && i.value === "nasa" && i.expected === "NASA"), "ALLCAPS probe: nasa -> NASA");
+  assert(!checker.analyze("jupiter rises.", { profile: "casual" }).some(i => i.kind === "culture"), "casual profile still exempts probed culture");
+  checker.ignoreWord("jupiter");
+  assert(!checker.analyze("jupiter rises.").some(i => i.kind === "culture"), "ignore list silences probed culture");
+  checker.unignoreWord("jupiter");
+
   // No exclusion configured -> unchanged behavior.
   const plain = await sandbox.McPhee.create({
     affUrl: "vendor/typo/en_US.aff",

@@ -210,14 +210,20 @@ treats it as not being there:
   punctuation `.` `!` `?` `…` (closing quotes/brackets allowed between).
   Sentence separators grown to 3+ spaces collapse back to two, everything
   else to one.
-- **culture** (teal) — a word from the nation/group/language/religion list
-  written entirely lowercase ("japanese", "usa", "english"); the fix is the
-  properly-cased form (Japanese, USA). The default list is conservative:
-  words whose lowercase form is a common English word (turkey, china,
-  polish, black as a color...) are excluded to avoid false positives — add
-  per-project entries via `options.cultureWords` (e.g. "black" for writing
-  where the ethnonym reading dominates). Exempt: personal dictionary,
-  `extraWords`, ignore list.
+- **culture** (teal) — a proper name written entirely lowercase; the fix is
+  the properly-cased form. Three detectors, in order:
+  1. a curated nation/group/language/religion list ("japanese", "usa") plus
+     per-project `options.cultureWords`;
+  2. dictionary-omission probe: the dictionary rejects the lowercase form
+     but knows the Capitalized one — that omission proves "jupiter",
+     "friday", "virginians" are proper nouns ("jupiter" → Jupiter);
+  3. ALLCAPS probe: "nasa" is a non-word but "NASA" is known ("nasa" →
+     NASA; words shorter than 3 letters skipped so "ok" is left alone).
+  All detectors are conservative by construction: turkey, china, polish,
+  and black (the color) never fire because their lowercase forms are
+  ordinary dictionary words — add such ambiguous words via `cultureWords`
+  only where the proper-noun reading dominates. Exempt: personal
+  dictionary, `extraWords`, ignore list.
 - **sentenceCapitalization** (orange) — a lowercase dictionary word at a
   sentence start (after `.` `!` `?` `…` + whitespace, or text start).
 - **terminalPunctuation** (orange outline) — the text's last

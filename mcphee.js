@@ -77,14 +77,15 @@
 //                                   (last character boxed) -> orange outline
 //   .mcphee-mark-echo            same word reused nearby -> lavender
 //   .mcphee-mark-obscure         rare word reused in the text -> green
-//   .mcphee-mark-culture         lowercase nation/group/language name -> teal
+//   .mcphee-mark-culture         proper name written lowercase (jupiter,
+//                                   japanese, usa) -> teal, with the cased fix
 // The overlay renders BEHIND the textarea (transparent text, colored
 // backgrounds only), so typing latency and native selection are untouched.
 
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.5.0";
+  var VERSION = "3.6.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -462,10 +463,12 @@ var McPhee = (function () {
   // (pink); anything shaped like a name/acronym/identifier is unknown (blue).
   // Sentence-initial capitalized typos therefore read as unknown — acceptable
   // for the "don't nag me about proper nouns" trade this makes. A lowercase
-  // word whose Capitalized form IS in the dictionary (english, virginians,
-  // mainer) is also unknown, not misspelled: it's a casually-lowercased
-  // proper noun, and "correcting" it to an unrelated word (english→anguish)
-  // would be vandalism.
+  // word whose Capitalized form IS in the dictionary (jupiter, english,
+  // virginians) is also unknown, not misspelled: the omission proves it's a
+  // casually-lowercased proper noun, and "correcting" it to an unrelated
+  // word (english→anguish) would be vandalism. When the culture rule is on,
+  // analyze() surfaces exactly these words as culture issues with the
+  // capitalized fix instead of leaving them vague blue unknowns.
   Checker.prototype.classify = function (word) {
     if (word.length <= 1) return "ok";
     var lower = word.toLowerCase();
@@ -499,7 +502,8 @@ var McPhee = (function () {
   //                  (carries norm + distance, both occurrences flagged)
   //   obscure        rare word (rank >= obscureRank or unranked) used 2+
   //                  times anywhere (carries norm + count, all flagged)
-  //   culture        lowercase nation/group/language/religion name
+  //   culture        proper name written lowercase — curated list plus
+  //                  dictionary-omission probes (jupiter/Jupiter, usa/USA)
   //                  (carries expected, the properly-cased form)
   // Words on the persistent ignore list are skipped entirely, and text
   // inside exclusion zones (options.exclude) is invisible to every rule.
@@ -523,13 +527,31 @@ var McPhee = (function () {
         words.push({ value: m[1], start: m.index, end: m.index + m[1].length, cls: cls });
         var lower = m[1].toLowerCase();
         if (this.ignoredWords.has(lower)) continue;
-        // Culture check first: a lowercase nation/group/language name gets
-        // its own category instead of a generic unknown-word flag.
+        // Culture check first: a proper name written lowercase gets its own
+        // category instead of a generic unknown-word flag. Three detectors,
+        // curated list first, then proof by dictionary omission:
+        //   1. the nation/group/language list (+ per-project cultureWords);
+        //   2. Capitalized-form probe — classify() already proved it: an
+        //      all-lowercase word classifies "unknown" exactly when the
+        //      dictionary rejects "jupiter" but knows "Jupiter", and that
+        //      omission IS the evidence the word is a proper noun;
+        //   3. ALLCAPS probe — "usa" is misspelled to the dictionary but
+        //      "USA" is a word (length >= 3, so "ok" doesn't become "OK").
+        // The probes are conservative by construction: turkey, china,
+        // polish, black never fire because their lowercase forms are
+        // ordinary dictionary words.
         var expected = null;
         if (rules.culture && m[1] === lower && !this.customWords.has(lower) && !this.extraWords.has(lower)) {
           expected = this.cultureWords.has(lower)
             ? lower.charAt(0).toUpperCase() + lower.slice(1)
             : cultureExpected(lower);
+          if (!expected && cls === "unknown") {
+            expected = lower.charAt(0).toUpperCase() + lower.slice(1);
+          }
+          if (!expected && cls === "misspelled" && lower.length >= 3
+            && this.dict.check(lower.toUpperCase())) {
+            expected = lower.toUpperCase();
+          }
         }
         if (expected) {
           issues.push({ kind: "culture", value: m[1], start: m.index, end: m.index + m[1].length, classification: "culture", expected: expected });
