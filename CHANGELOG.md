@@ -1,5 +1,12 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.0.2 — 2026-08-02
+
+- Panel rows are sorted by text position (first occurrence), all kinds
+  merged. Previously spelling rows came first and repetition rows after,
+  each in document order but not interleaved — the panel now reads in the
+  same order as the text.
+
 ## 3.0.1 — 2026-08-02
 
 - Fix overlay mark drift on `content-box` textareas: the backdrop is now

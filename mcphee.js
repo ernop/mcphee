@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.0.1";
+  var VERSION = "3.0.2";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -946,9 +946,13 @@ var McPhee = (function () {
         }
       });
 
+      // Every row carries the text position of its first occurrence; the
+      // panel is sorted by that, so it reads in the same order as the text.
+      var rows = [];
+
       wordGroups.forEach(function (group, key) {
         var parts = key.split("\u0000");
-        container.appendChild(wordRow(parts[0], parts[1], group.count, group.start));
+        rows.push({ start: group.start, el: wordRow(parts[0], parts[1], group.count, group.start) });
       });
 
       // Repetition rows: no autofix (word choice is the author's), just
@@ -970,7 +974,7 @@ var McPhee = (function () {
         row.appendChild(selectButton(function (i) {
           return (i.kind === "echo" || i.kind === "obscure") && i.norm === norm;
         }));
-        container.appendChild(row);
+        rows.push({ start: group.start, el: row });
       });
 
       issues.forEach(function (issue) {
@@ -996,7 +1000,7 @@ var McPhee = (function () {
           row.appendChild(selectButton(function (i) {
             return i.kind === "capitalization" && i.value === issue.value;
           }));
-          container.appendChild(row);
+          rows.push({ start: issue.start, el: row });
         } else if (issue.kind === "punctuation") {
           var prow = document.createElement("div");
           prow.className = "mcphee-panel-item mcphee-panel-note";
@@ -1007,7 +1011,7 @@ var McPhee = (function () {
           prow.appendChild(selectButton(function (i) {
             return i.kind === "punctuation";
           }));
-          container.appendChild(prow);
+          rows.push({ start: issue.start, el: prow });
         }
       });
 
@@ -1033,8 +1037,11 @@ var McPhee = (function () {
         srow.appendChild(selectButton(function (i) {
           return i.kind === "doublespace";
         }));
-        container.appendChild(srow);
+        rows.push({ start: firstDoubleSpaceStart, el: srow });
       }
+
+      rows.sort(function (a, b) { return a.start - b.start; });
+      rows.forEach(function (r) { container.appendChild(r.el); });
 
       var dictLine = document.createElement("div");
       dictLine.className = "mcphee-panel-dictcount";
