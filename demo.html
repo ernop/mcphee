@@ -6,10 +6,8 @@
 <link rel="stylesheet" href="mcphee.css">
 <style>
   body { font-family: system-ui, sans-serif; margin: 24px; max-width: 1240px; }
-  .row { display: flex; gap: 24px; align-items: flex-start; }
-  .col { flex: 1; }
-  textarea { width: 100%; height: 180px; font: 15px/1.5 monospace; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
-  #panel { border: 1px solid #e5e7eb; border-radius: 4px; padding: 10px; flex: 0 0 430px; }
+  textarea { width: 100%; height: 320px; font: 15px/1.5 monospace; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+  .mcphee-dock-side { border: 1px solid #e5e7eb; border-radius: 4px; padding: 10px; }
   .controls { margin: 10px 0; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   button, select { font-size: 14px; padding: 4px 10px; }
   #report { font-family: monospace; font-size: 13px; color: #374151; white-space: pre-line; }
@@ -19,8 +17,7 @@
 <body>
 <h1>McPhee demo <small id="version"></small></h1>
 
-<div class="row">
-  <div class="col">
+<div id="editor-area">
     <textarea id="editor">the quick brown fox jumps over the lazy dog.  This sentence follows a deliberate double space, which is fine. i believe NASA and camelCaseWord are ok but wierd words like asdfgh get flagged. english people dont mind. But this   triple space is a violation. Helbro. Never have I seen a never-worse situation than this.
 
 weofij we fj
@@ -36,21 +33,19 @@ SMITTH Smith Smytye
 
 this line has no ending punctuation, nor unktuousness
 #detect entire-article reuse of same obscure word: this closing line is padded well past the fifty-word window on purpose, so when the writer turns obstreperously verbose once more, the far-apart pair earns the green mark instead of the lavender one</textarea>
-    <div class="controls">
-      <label>profile:
-        <select id="profile">
-          <option value="standard">standard</option>
-          <option value="strict">strict</option>
-          <option value="casual">casual</option>
-        </select>
-      </label>
-      <button id="fix">fix typos (undo-preserving)</button>
-      <button id="toggle">toggle overlay</button>
-    </div>
-    <div id="report"></div>
-  </div>
-  <div class="col" id="panel"></div>
 </div>
+<div class="controls">
+  <label>profile:
+    <select id="profile">
+      <option value="standard">standard</option>
+      <option value="strict">strict</option>
+      <option value="casual">casual</option>
+    </select>
+  </label>
+  <button id="fix">fix typos (undo-preserving)</button>
+  <button id="toggle">toggle overlay</button>
+</div>
+<div id="report"></div>
 
 <fieldset>
   <legend>guardForm demo (watch mode: submit disabled while misspellings exist)</legend>
@@ -77,20 +72,14 @@ this line has no ending punctuation, nor unktuousness
   });
 
   const editor = document.getElementById("editor");
-  const ctl = sw.attach(editor);
-  let panel = sw.attachPanel({
-    textarea: editor,
-    container: document.getElementById("panel"),
-    controller: ctl,
-  });
+  // dock() claims the UI space itself: inline 70/30 split or a slide-out
+  // drawer, toggleable from the panel chrome and remembered per origin.
+  let d = sw.dock(editor, { modeStorageKey: "mcphee_demo_panel_mode" });
 
   document.getElementById("profile").addEventListener("change", (e) => {
-    ctl.setRules({ profile: e.target.value });
-    panel.detach();
-    panel = sw.attachPanel({
-      textarea: editor,
-      container: document.getElementById("panel"),
-      controller: ctl,
+    d.detach();
+    d = sw.dock(editor, {
+      modeStorageKey: "mcphee_demo_panel_mode",
       profile: e.target.value,
     });
   });
@@ -100,13 +89,13 @@ this line has no ending punctuation, nor unktuousness
     const lines = fix.wordChanges.map((c) => `${c.from} \u2192 ${c.to}`);
     if (fix.spaceRuns) lines.push(`${fix.spaceRuns} double space run(s) collapsed`);
     document.getElementById("report").textContent = lines.length ? lines.join("\n") : "no changes";
-    panel.refresh();
+    d.panel.refresh();
   });
 
   let overlayOn = true;
   document.getElementById("toggle").addEventListener("click", () => {
     overlayOn = !overlayOn;
-    ctl.setEnabled(overlayOn);
+    d.controller.setEnabled(overlayOn);
   });
 
   sw.guardForm(document.getElementById("guarded"), {

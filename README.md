@@ -71,6 +71,23 @@ const sw = await McPhee.create({
   // echoWindowWords: 50, echoCommonRank: 2000, obscureRank: 10000,
 });
 
+// Batteries-included: overlay + panel + placement in one call. The panel
+// either docks inline beside the textarea (~30% of the row, sticky) or
+// slides in from the screen edge as a drawer; a chrome button switches
+// modes live and the choice persists in localStorage — per origin, so
+// every hostname/browser pair remembers its own preference:
+const d = sw.dock(document.querySelector("textarea"), {
+  // mode: "inline" | "drawer"   (default: stored preference, else inline)
+  // panelFraction: 0.3,          inline width share
+  // modeStorageKey: "mcphee_panel_mode",
+  // handle: true,                drawer-mode floating "✓ spelling" opener
+});
+d.controller;      // overlay controller (below)
+d.panel;           // panel controller
+d.setMode("drawer"); d.openDrawer(); d.toggleDrawer();
+d.detach();
+
+// ...or wire the pieces yourself:
 // Live highlighting behind a textarea (native typing/selection untouched):
 const ctl = sw.attach(document.querySelector("textarea"));
 ctl.refresh();            // after programmatic .value writes (also auto-polled)
@@ -86,7 +103,11 @@ ctl.detach();
 // add-to-dictionary, capitalize, collapse extra spaces; hovering a row
 // scrolls the textarea to that issue's location, and every row's `select`
 // button focuses the textarea with the issue's text selected. The header's
-// "↻ recheck" button force-regenerates the overlay and the panel:
+// "↻ recheck" button force-regenerates the overlay and the panel.
+// With a controller the panel stays linked to the text both ways: rows
+// whose occurrences are all scrolled off screen dim (followViewport), and
+// the row nearest the caret is highlighted and scrolled into view in the
+// panel (followCaret) — both default on, pass false to disable:
 const panel = sw.attachPanel({ textarea, container: sidebarDiv, controller: ctl });
 
 // One-click local fix, applied through the browser's editing pipeline so

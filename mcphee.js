@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.2.0";
+  var VERSION = "3.3.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -805,12 +805,30 @@ var McPhee = (function () {
       m.classList.add("mcphee-mark-flash");
     }
 
+    // The set of issue offsets whose marks are currently visible on screen.
+    // Visibility is judged against the intersection of the textarea's box
+    // with the viewport, so it works both for textareas with an inner
+    // scrollbar and for auto-grown textareas where the page scrolls.
+    function visibleStarts() {
+      var out = new Set();
+      var taR = textarea.getBoundingClientRect();
+      var top = Math.max(taR.top, 0);
+      var bottom = Math.min(taR.bottom, window.innerHeight || document.documentElement.clientHeight);
+      if (bottom <= top) return out;
+      backdrop.querySelectorAll("mark").forEach(function (m) {
+        var r = m.getBoundingClientRect();
+        if (r.bottom >= top && r.top <= bottom) out.add(+m.dataset.start);
+      });
+      return out;
+    }
+
     return {
       // refresh(true) forces a re-render (e.g. after addCustomWord, which
       // changes classification without changing the text).
       refresh: refresh,
       scrollToOffset: scrollToOffset,
       flashAt: flashAt,
+      visibleStarts: visibleStarts,
       setRules: function (o) {
         renderOpts.rules = self.resolveRules(o);
         refresh(true);
@@ -841,7 +859,12 @@ var McPhee = (function () {
   // Live issue list with per-word actions: suggestion buttons (replace all
   // occurrences, undo-preserving), add-to-dictionary for misspelled/unknown
   // words, capitalize for sentence-start nags, collapse for double spaces.
-  // config: { textarea, container, controller?, profile?, rules?, onChange? }
+  // With a controller, the panel stays linked to the text both ways: rows
+  // whose occurrences are all scrolled off screen are dimmed
+  // (followViewport), and the row nearest the caret is highlighted and
+  // scrolled into view within the panel (followCaret). Both default on.
+  // config: { textarea, container, controller?, profile?, rules?, onChange?,
+  //           followViewport?, followCaret? }
   Checker.prototype.attachPanel = function (config) {
     var self = this;
     var textarea = config.textarea;
@@ -973,22 +996,25 @@ var McPhee = (function () {
       var repeatGroups = new Map(); // norm -> echo/obscure group
       var doubleSpaces = 0;
       var firstDoubleSpaceStart = null;
+      var doubleSpaceSpans = [];
       issues.forEach(function (issue) {
         if (issue.kind === "word") {
           var key = issue.value + "\u0000" + issue.classification;
           var group = wordGroups.get(key);
           if (group) {
             group.count++;
+            group.spans.push([issue.start, issue.end]);
           } else {
-            wordGroups.set(key, { count: 1, start: issue.start });
+            wordGroups.set(key, { count: 1, start: issue.start, spans: [[issue.start, issue.end]] });
           }
         } else if (issue.kind === "echo" || issue.kind === "obscure") {
           // An echo outranks an obscure row for the same word.
           var rg = repeatGroups.get(issue.norm);
           if (!rg || (issue.kind === "echo" && rg.kind === "obscure")) {
-            rg = { kind: issue.kind, value: issue.value, count: 0, start: issue.start, distance: issue.distance };
+            rg = { kind: issue.kind, value: issue.value, count: 0, start: issue.start, distance: issue.distance, spans: [] };
             repeatGroups.set(issue.norm, rg);
           }
+          rg.spans.push([issue.start, issue.end]);
           if (issue.kind === rg.kind) {
             rg.count++;
             if (issue.distance !== undefined) {
@@ -998,6 +1024,7 @@ var McPhee = (function () {
         } else if (issue.kind === "doublespace") {
           doubleSpaces++;
           if (firstDoubleSpaceStart === null) firstDoubleSpaceStart = issue.start;
+          doubleSpaceSpans.push([issue.start, issue.end]);
         }
       });
 
@@ -1015,6 +1042,7 @@ var McPhee = (function () {
         rows.push({
           rank: SECTION_RANK[parts[1]],
           start: group.start,
+          spans: group.spans,
           el: wordRow(parts[0], parts[1], group.count, group.start),
         });
       });
@@ -1037,6 +1065,7 @@ var McPhee = (function () {
         rows.push({
           rank: SECTION_RANK[group.kind],
           start: group.start,
+          spans: group.spans,
           el: panelRow(group.start, [label], dismiss, sel),
         });
       });
@@ -1063,6 +1092,7 @@ var McPhee = (function () {
           rows.push({
             rank: SECTION_RANK.capitalization,
             start: issue.start,
+            spans: [[issue.start, issue.end]],
             el: panelRow(issue.start, [label, capBtn], null, capSel),
           });
         } else if (issue.kind === "punctuation") {
@@ -1073,7 +1103,12 @@ var McPhee = (function () {
           });
           var prow = panelRow(issue.start, [ptext], null, pSel);
           prow.classList.add("mcphee-panel-note");
-          rows.push({ rank: SECTION_RANK.punctuation, start: issue.start, el: prow });
+          rows.push({
+            rank: SECTION_RANK.punctuation,
+            start: issue.start,
+            spans: [[issue.start, issue.end]],
+            el: prow,
+          });
         }
       });
 
@@ -1098,17 +1133,67 @@ var McPhee = (function () {
         rows.push({
           rank: SECTION_RANK.doublespace,
           start: firstDoubleSpaceStart,
+          spans: doubleSpaceSpans,
           el: panelRow(firstDoubleSpaceStart, [slabel, collapseBtn], null, sSel),
         });
       }
 
       rows.sort(function (a, b) { return a.rank - b.rank || a.start - b.start; });
       rows.forEach(function (r) { container.appendChild(r.el); });
+      rowMeta = rows;
 
       var dictLine = document.createElement("div");
       dictLine.className = "mcphee-panel-dictcount";
       dictLine.textContent = "personal dictionary: " + self.customWords.size + " words";
       container.appendChild(dictLine);
+      updateViewport();
+      updateCaretRow();
+    }
+
+    // ----- scroll/caret linkage -----
+    // The panel and the text stay oriented to each other: rows whose every
+    // occurrence is scrolled out of view are dimmed, and the row nearest the
+    // caret is highlighted and kept scrolled into view in the panel.
+    var rowMeta = [];
+
+    function spansVisible(spans, vis) {
+      for (var i = 0; i < spans.length; i++) {
+        if (vis.has(spans[i][0])) return true;
+      }
+      return false;
+    }
+
+    function updateViewport() {
+      if (config.followViewport === false) return;
+      if (!config.controller || !config.controller.visibleStarts) return;
+      var vis = config.controller.visibleStarts();
+      rowMeta.forEach(function (r) {
+        r.el.classList.toggle("mcphee-panel-item-offscreen", !spansVisible(r.spans, vis));
+      });
+    }
+
+    function updateCaretRow() {
+      if (config.followCaret === false) return;
+      if (document.activeElement !== textarea) return;
+      var caret = textarea.selectionStart;
+      var best = null;
+      var bestDist = Infinity;
+      rowMeta.forEach(function (r) {
+        r.spans.forEach(function (span) {
+          var dist = caret < span[0] ? span[0] - caret
+            : caret > span[1] ? caret - span[1] : 0;
+          if (dist < bestDist) { bestDist = dist; best = r; }
+        });
+      });
+      // Only claim a "current" row when the caret is actually near an issue;
+      // a caret in clean prose highlights nothing.
+      var current = bestDist <= 120 ? best : null;
+      rowMeta.forEach(function (r) {
+        r.el.classList.toggle("mcphee-panel-item-current", r === current);
+      });
+      if (current) {
+        current.el.scrollIntoView({ block: "nearest" });
+      }
     }
 
     var debounceTimer = null;
@@ -1116,18 +1201,181 @@ var McPhee = (function () {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(render, 400);
     }
+    var viewportTimer = null;
+    function onViewportChange() {
+      clearTimeout(viewportTimer);
+      viewportTimer = setTimeout(updateViewport, 120);
+    }
+    var caretTimer = null;
+    function onCaretMove() {
+      clearTimeout(caretTimer);
+      caretTimer = setTimeout(updateCaretRow, 150);
+    }
     textarea.addEventListener("input", onInput);
+    textarea.addEventListener("scroll", onViewportChange);
+    // Capture-phase window listener also catches page and ancestor-container
+    // scrolling (auto-grown textareas scroll the page, not themselves).
+    window.addEventListener("scroll", onViewportChange, true);
+    textarea.addEventListener("keyup", onCaretMove);
+    textarea.addEventListener("click", onCaretMove);
     render();
 
     return {
       refresh: render,
       detach: function () {
         clearTimeout(debounceTimer);
+        clearTimeout(viewportTimer);
+        clearTimeout(caretTimer);
+        window.removeEventListener("scroll", onViewportChange, true);
+        textarea.removeEventListener("scroll", onViewportChange);
+        textarea.removeEventListener("keyup", onCaretMove);
+        textarea.removeEventListener("click", onCaretMove);
         textarea.removeEventListener("input", onInput);
         container.classList.remove("mcphee-panel");
         container.innerHTML = "";
       },
     };
+  };
+
+  // ---------- dock: batteries-included layout ----------
+
+  // One call that claims space for the whole McPhee UI around a textarea:
+  // overlay + issues panel + a persisted, per-origin placement preference.
+  //
+  //   const d = sw.dock(textarea, opts);
+  //
+  // Two placements, toggleable live from the panel chrome and remembered in
+  // localStorage (which is per-origin, so each hostname/browser pair keeps
+  // its own choice):
+  //   "inline"  the textarea keeps ~70% of its row and the panel docks
+  //             beside it (sticky, so it rides along as the page scrolls)
+  //   "drawer"  the textarea keeps all its space; the panel slides in from
+  //             the right edge, opened by a floating handle or openDrawer()
+  //
+  // opts: profile/rules/onChange (forwarded), panelFraction (inline width
+  // share, default 0.3), mode ("inline"|"drawer", overrides the stored
+  // preference), modeStorageKey (default "mcphee_panel_mode"), handle
+  // (drawer-mode floating opener, default true).
+  //
+  // Returns { controller, panel, getMode, setMode, openDrawer, closeDrawer,
+  // toggleDrawer, detach }.
+  Checker.prototype.dock = function (textarea, opts) {
+    var self = this;
+    opts = opts || {};
+    var storageKey = opts.modeStorageKey || "mcphee_panel_mode";
+    var fraction = opts.panelFraction || 0.3;
+    var mode;
+    try {
+      mode = opts.mode || localStorage.getItem(storageKey) || "inline";
+    } catch (e) { mode = opts.mode || "inline"; }
+    if (mode !== "inline" && mode !== "drawer") mode = "inline";
+
+    // Layout skeleton: wrap replaces the textarea in the document flow.
+    var wrap = document.createElement("div");
+    wrap.className = "mcphee-dock";
+    textarea.parentNode.insertBefore(wrap, textarea);
+    var main = document.createElement("div");
+    main.className = "mcphee-dock-main";
+    var side = document.createElement("div");
+    side.className = "mcphee-dock-side";
+    side.style.flex = "0 0 " + Math.round(fraction * 100) + "%";
+    wrap.appendChild(main);
+    wrap.appendChild(side);
+    main.appendChild(textarea);
+
+    var drawer = document.createElement("div");
+    drawer.className = "mcphee-drawer";
+    document.body.appendChild(drawer);
+    var handle = null;
+    if (opts.handle !== false) {
+      handle = document.createElement("button");
+      handle.type = "button";
+      handle.className = "mcphee-drawer-handle";
+      handle.textContent = "\u2713 spelling";
+      handle.addEventListener("click", function () { api.toggleDrawer(); });
+      document.body.appendChild(handle);
+    }
+
+    // The panel renders into one container that MOVES between the two homes
+    // (inline cell / drawer body); no re-render needed on mode switch.
+    var chrome = document.createElement("div");
+    chrome.className = "mcphee-dock-bar";
+    var modeBtn = document.createElement("button");
+    modeBtn.type = "button";
+    modeBtn.className = "mcphee-panel-btn mcphee-dock-modebtn";
+    modeBtn.addEventListener("click", function () {
+      api.setMode(mode === "inline" ? "drawer" : "inline");
+    });
+    var closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "mcphee-panel-btn mcphee-dock-closebtn";
+    closeBtn.textContent = "\u00d7";
+    closeBtn.title = "Close";
+    closeBtn.addEventListener("click", function () { api.closeDrawer(); });
+    chrome.appendChild(modeBtn);
+    chrome.appendChild(closeBtn);
+
+    var panelContainer = document.createElement("div");
+
+    function applyMode() {
+      modeBtn.textContent = mode === "inline" ? "\u21e5 side drawer" : "\u21e4 dock inline";
+      modeBtn.title = mode === "inline"
+        ? "Move the panel into a slide-out drawer at the screen edge"
+        : "Dock the panel beside the text";
+      closeBtn.style.display = mode === "drawer" ? "" : "none";
+      if (handle) handle.style.display = mode === "drawer" ? "" : "none";
+      if (mode === "inline") {
+        side.appendChild(chrome);
+        side.appendChild(panelContainer);
+        side.style.display = "";
+        drawer.classList.remove("mcphee-drawer-open");
+      } else {
+        drawer.appendChild(chrome);
+        drawer.appendChild(panelContainer);
+        side.style.display = "none";
+      }
+    }
+
+    var api = {
+      getMode: function () { return mode; },
+      setMode: function (m) {
+        if (m !== "inline" && m !== "drawer") return;
+        mode = m;
+        try { localStorage.setItem(storageKey, m); } catch (e) { /* private mode */ }
+        applyMode();
+        if (mode === "drawer") api.openDrawer();
+      },
+      openDrawer: function () {
+        if (mode === "drawer") drawer.classList.add("mcphee-drawer-open");
+      },
+      closeDrawer: function () { drawer.classList.remove("mcphee-drawer-open"); },
+      toggleDrawer: function () {
+        if (drawer.classList.contains("mcphee-drawer-open")) api.closeDrawer();
+        else api.openDrawer();
+      },
+      detach: function () {
+        api.panel.detach();
+        api.controller.detach();
+        wrap.parentNode.insertBefore(textarea, wrap);
+        wrap.remove();
+        drawer.remove();
+        if (handle) handle.remove();
+      },
+    };
+
+    applyMode();
+    api.controller = this.attach(textarea, opts);
+    api.panel = this.attachPanel({
+      textarea: textarea,
+      container: panelContainer,
+      controller: api.controller,
+      profile: opts.profile,
+      rules: opts.rules,
+      onChange: opts.onChange,
+      followViewport: opts.followViewport,
+      followCaret: opts.followCaret,
+    });
+    return api;
   };
 
   // ---------- form submit gating ----------

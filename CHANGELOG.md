@@ -1,5 +1,27 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.3.0 — 2026-08-02
+
+- New `dock(textarea, opts)`: batteries-included layout that claims space
+  for the whole McPhee UI. Two placements, switchable live from the panel
+  chrome and remembered in localStorage (per origin, so every
+  hostname/browser pair keeps its own choice):
+  - `inline` — the textarea keeps ~70% of its row; the panel docks beside
+    it (sticky, rides along with page scroll; `panelFraction` tunes the
+    split).
+  - `drawer` — the textarea keeps all its space; the panel slides in from
+    the right edge, opened by a floating "✓ spelling" handle or
+    `openDrawer()`.
+- Scroll linkage (`followViewport`, default on with a controller): panel
+  rows whose every occurrence is scrolled off screen are dimmed, so the
+  bright rows always correspond to text currently in view. Judged against
+  the textarea-viewport intersection, so it works for inner-scrolling and
+  auto-grown textareas alike. New controller method `visibleStarts()`.
+- Caret linkage (`followCaret`, default on with a controller): the panel
+  row nearest the caret is highlighted and kept scrolled into view in the
+  panel — navigate the text to reach its corrections.
+- Demo now dogfoods `dock()`.
+
 ## 3.2.0 — 2026-08-02
 
 - Force regenerate: the panel header now carries a `↻ recheck` button that
