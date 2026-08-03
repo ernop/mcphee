@@ -1,5 +1,23 @@
 # McPhee changelog
 
+## 3.6.2 — 2026-08-02
+
+Accepting a suggestion now drops you to the next item instead of losing
+your place. Previously a panel action rewrote the whole text (leaving the
+caret at the end of the document) and rebuilt the panel (clamping its
+scroll to the top), so caret-follow could then yank the panel to its last
+row.
+
+- Whole-text panel edits (suggestion buttons, culture fixes, collapse
+  spaces) restore the caret to where it was, adjusted for the length
+  changes of replacements before it; a caret inside a replaced word lands
+  at the replacement's end. Still one undo step.
+- The panel re-render preserves the scroll position of whatever element
+  scrolls it (container, dock side column, or drawer), so the acted-on
+  row's neighbors stay in place and the next row moves up into its spot.
+- `applyFixes` likewise re-anchors the caret through the rewrite (common
+  prefix/suffix mapping) instead of leaving it at the end.
+
 ## 3.6.1 — 2026-08-02
 
 Documentation restructure; no behavior changes.

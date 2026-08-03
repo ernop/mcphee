@@ -79,7 +79,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.6.1";
+  var VERSION = "3.6.2";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -271,6 +271,23 @@ var McPhee = (function () {
       textarea.setRangeText(replacement, start, end, "end");
       textarea.dispatchEvent(new Event("input", { bubbles: true }));
     }
+  }
+
+  // Maps a caret position through a whole-text rewrite using the common
+  // prefix/suffix of the two versions: a caret in unchanged leading or
+  // trailing text keeps its exact spot; a caret inside the changed region
+  // lands at that region's end. Whole-text replaceRange otherwise leaves
+  // the caret at the end of the document.
+  function caretAfterRewrite(oldText, newText, caret) {
+    var max = Math.min(oldText.length, newText.length);
+    var p = 0;
+    while (p < max && oldText.charCodeAt(p) === newText.charCodeAt(p)) p++;
+    var s = 0;
+    while (s < max - p
+      && oldText.charCodeAt(oldText.length - 1 - s) === newText.charCodeAt(newText.length - 1 - s)) s++;
+    if (caret <= p) return caret;
+    if (caret >= oldText.length - s) return newText.length - (oldText.length - caret);
+    return newText.length - s;
   }
 
   function Checker(dict, options, freqRank) {
@@ -812,7 +829,9 @@ var McPhee = (function () {
     var fix = this.localFix(textarea.value, opts);
     fix.applied = fix.text !== textarea.value;
     if (fix.applied) {
+      var caret = caretAfterRewrite(textarea.value, fix.text, textarea.selectionStart);
       replaceRange(textarea, 0, textarea.value.length, fix.text);
+      textarea.setSelectionRange(caret, caret);
     }
     return fix;
   };
@@ -1155,15 +1174,27 @@ var McPhee = (function () {
       if (config.onChange) config.onChange();
     }
 
+    // Rewrites the whole value in ONE undo step, then restores the caret.
+    // A whole-text replace leaves the caret at the end of the document,
+    // which would make the caret-follow linkage yank the panel to its last
+    // row after every accepted suggestion; re-anchoring the caret keeps the
+    // author where they were working, so the next issue's row simply takes
+    // the fixed row's place.
     function replaceAllOccurrences(word, replacement) {
       var re = new RegExp("\\b" + escapeRegExp(word) + "\\b", "g");
       var value = textarea.value;
       var excluded = rangeCursor(self.excludedRanges(value, analyzeOpts));
+      var caret = textarea.selectionStart;
+      var newCaret = caret;
       var newText = value.replace(re, function (match, offset) {
-        return excluded(offset) || excluded(offset + match.length - 1) ? match : replacement;
+        if (excluded(offset) || excluded(offset + match.length - 1)) return match;
+        if (offset + match.length <= caret) newCaret += replacement.length - match.length;
+        else if (offset < caret) newCaret = offset + replacement.length;
+        return replacement;
       });
       if (newText !== value) {
         replaceRange(textarea, 0, value.length, newText);
+        textarea.setSelectionRange(newCaret, newCaret);
       }
       afterAction();
     }
@@ -1452,6 +1483,17 @@ var McPhee = (function () {
 
     function render() {
       var issues = self.analyze(textarea.value, analyzeOpts);
+      // Rebuilding wipes the panel's DOM, which clamps the scroll position
+      // of whatever element scrolls it (the panel container, the dock side
+      // column, or the drawer) to 0. Preserve it so acting on a row leaves
+      // the list where the author was looking — the next row simply moves
+      // up into the acted-on row's place.
+      var scroller = container;
+      while (scroller && scroller !== document.documentElement
+        && scroller.scrollHeight <= scroller.clientHeight) {
+        scroller = scroller.parentElement;
+      }
+      var savedScroll = scroller ? scroller.scrollTop : 0;
       container.innerHTML = "";
 
       var header = document.createElement("div");
@@ -1635,13 +1677,19 @@ var McPhee = (function () {
         var collapseBtn = button("collapse", "mcphee-panel-suggestion", function () {
           var value = textarea.value;
           var excluded = rangeCursor(self.excludedRanges(value, analyzeOpts));
+          var caret = textarea.selectionStart;
+          var newCaret = caret;
           var newText = value.replace(/ {2,}/g, function (run, offset) {
             if (excluded(offset) || excluded(offset + run.length - 1)) return run;
             var v = classifySpaceRun(value, offset, run.length);
-            return v ? v.collapseTo : run;
+            if (!v) return run;
+            if (offset + run.length <= caret) newCaret += v.collapseTo.length - run.length;
+            else if (offset < caret) newCaret = offset + v.collapseTo.length;
+            return v.collapseTo;
           });
           if (newText !== value) {
             replaceRange(textarea, 0, value.length, newText);
+            textarea.setSelectionRange(newCaret, newCaret);
           }
           afterAction();
         });
@@ -1667,6 +1715,7 @@ var McPhee = (function () {
       dictLine.className = "mcphee-panel-dictcount";
       dictLine.textContent = "personal dictionary: " + self.customWords.size + " words";
       container.appendChild(dictLine);
+      if (scroller && scroller.scrollTop !== savedScroll) scroller.scrollTop = savedScroll;
       updateViewport();
       updateCaretRow();
     }

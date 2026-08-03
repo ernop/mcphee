@@ -36,6 +36,17 @@ Linked from [AGENTS.md](../AGENTS.md).
 - **Naming**: the developer is "the creator" — "its not a name of esteem its
   just a name." The creator and the agent are partners working together.
 
+## 2026-08-02 — Accepting a suggestion drops to the next item
+
+- The creator's expectation, stated while reviewing the red misspelling
+  section: "imagine I click and accept a suggestion - i'd have thought i'd
+  drop just slightly down to the next item in the suggestion list?" That is
+  now the behavior. The agent's investigation found the old behavior reset
+  the panel scroll to the top and left the caret at the end of the
+  document (yanking caret-follow to the last row); fixed by preserving the
+  panel's scroll position across re-renders and re-anchoring the caret
+  through every whole-text rewrite.
+
 ## 2026-08-02 — Exclusion zones
 
 - The host site's markup blocks (for the creator's site: double-brace
