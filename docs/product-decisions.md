@@ -157,6 +157,36 @@ Linked from [AGENTS.md](../AGENTS.md).
   - tests organized by area (`test/node/` by rule area, `test/browser/`),
     not by the version that introduced them.
 
+## 2026-08-03 — Hover highlight: solid color change, never motion
+
+- Creator: "highlighting shall be full-background-of-word colorchanging. i
+  hate pulsing especially eternal. also i hate transition efefcts." The
+  hover effect is now a plain background swap on the whole word — applied
+  and removed on the exact instants the pointer enters and leaves a panel
+  row. No animation, no transition, anywhere in the library. This
+  supersedes the 2026-08-02 pulse behavior (the instant-on/instant-off
+  requirement from that decision still stands; the motion does not).
+
+## 2026-08-03 — Both uses of a repeated word must be visible
+
+- Creator: highlighting of the "dual case of using a word multiple times"
+  must highlight BOTH occurrences — "i need to see both of the uses which
+  we're speaking about in one way or the other." Repeat rows highlight
+  every occurrence simultaneously with the solid hover color; the browser
+  suite asserts at least two marks recolor when a repeat row is hovered.
+
+## 2026-08-03 — The rare-word list must be correctable
+
+- Creator, after "won't" was treated as rare: "i must be able to add words
+  such as 'won't' to the list of words which are not actually rare." The
+  frequency ranks come from the top ~30k of Peter Norvig's Google Web
+  Trillion Word Corpus counts; that corpus lost apostrophes, so
+  contractions are unranked and the obscure detector counted them as rare.
+  Two corrections shipped: a persistent per-browser not-rare list (panel
+  button on obscure rows; marked words are treated as maximally common),
+  and an automatic rank fallback to the apostrophe-stripped form
+  (won't → wont).
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

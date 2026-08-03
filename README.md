@@ -17,8 +17,9 @@ step, nothing phoning home. Free.
   proper noun into some unrelated word.
 - **A corrections panel** beside your text: suggestions you click once to
   fix everywhere, an add-to-dictionary button, and an ignore button (with
-  a brief undo, and a list to un-ignore later). Hovering an item pulses the
-  matching words in your text; clicking one selects it. Fixes never destroy
+  a brief undo, and a list to un-ignore later). Hovering an item highlights
+  every matching word in your text — for a repeated word, both uses at
+  once; clicking one selects it. Fixes never destroy
   your undo history — Ctrl+Z always works.
 - **Repetition detection**, inspired by John McPhee, who ran Kedit's `All`
   command over every piece to see each use of a chosen word and the

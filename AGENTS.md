@@ -75,7 +75,7 @@ Technical:
     arithmetic). Run: `npm test`.
   - `test/browser/suite.py` — Playwright suite for what Node cannot see:
     overlay visibility, wrap-parity integrity across a content matrix,
-    hover pulse, panel section order, and suggestion acceptance. The
+    hover highlighting, panel section order, and suggestion acceptance. The
     library's own integrity self-check is the oracle — the tests never do
     pixel math. Run: `python test/browser/suite.py`.
 

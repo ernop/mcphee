@@ -87,18 +87,15 @@
 /* Culture: lowercase nation/group/language/religion name — gentle teal. */
 .mcphee-mark-culture { background: #c9ecea; }
 
-/* Hover pulse: runs ONLY while the pointer is on a panel row — the class is
-   added on mouseenter and removed on mouseleave, so it starts and stops
-   instantly with no trailing animation. */
-.mcphee-mark-pulse {
-  animation: mcphee-pulse 700ms ease-in-out infinite;
-}
-
-@keyframes mcphee-pulse {
-  50% {
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
-    filter: saturate(2.5);
-  }
+/* Hover highlight: while the pointer is on a panel row, every occurrence of
+   that row's issue gets this solid saturated background — a plain full-word
+   color change. NO animation and NO transition, ever: the class is added on
+   mouseenter and removed on mouseleave, and the color changes on those exact
+   instants. */
+.mcphee-mark-hover {
+  background: #ffb020;
+  animation: none;
+  transition: none;
 }
 
 /* ---------- issues panel (attachPanel) ---------- */

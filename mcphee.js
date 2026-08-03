@@ -50,9 +50,11 @@
 //                  10000) — or absent from the frequency list entirely —
 //                  used 2+ times anywhere in the text. Requires freqUrl.
 // Personal-dictionary and extraWords entries are exempt from both (they are
-// the text's topic vocabulary). There is no autofix — word choice is the
-// author's call; the panel offers hover-to-scroll and a session-scoped
-// dismiss per word (checker.ignoreRepeat(word)).
+// the text's topic vocabulary), as are words on the persistent not-rare
+// list (checker.markNotRare(word) — the correction for frequency-list gaps
+// such as contractions). There is no autofix — word choice is the author's
+// call; the panel offers hover-to-scroll and a session-scoped dismiss per
+// word (checker.ignoreRepeat(word)).
 //
 // Highlighting model (deliberately NOT the browser's red squiggles):
 //   .mcphee-mark-misspelled      lowercase word not in any dictionary -> pink
@@ -79,7 +81,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.7.0";
+  var VERSION = "3.8.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -321,6 +323,14 @@ var McPhee = (function () {
     this.echoCommonRank = options.echoCommonRank || 2000;
     this.obscureRank = options.obscureRank || 10000;
     this.ignoredRepeats = new Set();
+    // Persistent "not actually rare" list: the vendored frequency list has
+    // gaps (its web corpus lost apostrophes, so contractions like "won't"
+    // are unranked and would count as obscure). Words here are treated as
+    // maximally common — never obscure, exempt from echo like any common
+    // word.
+    this.notRareStorageKey = options.notRareStorageKey || (this.storageKey + ":notrare");
+    this.notRareWords = new Set();
+    this.loadNotRareWords();
   }
 
   // Session-scoped: silences echo/obscureRepeat for this word until reload.
@@ -331,11 +341,46 @@ var McPhee = (function () {
 
   // Frequency rank of a word's normal form, plural-folded; Infinity when the
   // word is rarer than the vendored list, null when no list was loaded.
+  // Words on the not-rare list rank as 1. Contractions fall back to their
+  // apostrophe-stripped form (won't -> wont), since the list's web corpus
+  // lost apostrophes.
   Checker.prototype.rankOf = function (norm) {
+    if (this.notRareWords.has(pluralKey(norm))) return 1;
     if (!this.freqRank) return null;
     var r = this.freqRank.get(norm);
     if (r === undefined) r = this.freqRank.get(pluralKey(norm));
+    if (r === undefined && norm.indexOf("'") !== -1) {
+      r = this.freqRank.get(norm.replace(/'/g, ""));
+    }
     return r === undefined ? Infinity : r;
+  };
+
+  Checker.prototype.loadNotRareWords = function () {
+    try {
+      var raw = localStorage.getItem(this.notRareStorageKey);
+      var self = this;
+      if (raw) JSON.parse(raw).forEach(function (w) { self.notRareWords.add(String(w)); });
+    } catch (e) { /* corrupted or unavailable storage — start empty */ }
+  };
+
+  Checker.prototype.saveNotRareWords = function () {
+    try {
+      localStorage.setItem(this.notRareStorageKey, JSON.stringify(Array.from(this.notRareWords)));
+    } catch (e) { /* private mode */ }
+  };
+
+  Checker.prototype.markNotRare = function (word) {
+    this.notRareWords.add(pluralKey(normWord(String(word))));
+    this.saveNotRareWords();
+  };
+
+  Checker.prototype.unmarkNotRare = function (word) {
+    this.notRareWords.delete(pluralKey(normWord(String(word))));
+    this.saveNotRareWords();
+  };
+
+  Checker.prototype.listNotRareWords = function () {
+    return Array.from(this.notRareWords).sort();
   };
 
   // Resolves the exclusion option (per-call opts.exclude wins over the
@@ -1037,22 +1082,25 @@ var McPhee = (function () {
       }
     }
 
-    // Hover pulse: starts the instant the pointer enters a panel row and
-    // stops the instant it leaves — never a trailing animation, never more
-    // than one pulsing group at a time. `starts` lists every occurrence to
-    // pulse (echo rows pulse all their words together).
-    function pulseStart(starts) {
-      pulseStop();
+    // Hover highlight: while the pointer is on a panel row, every occurrence
+    // of that row's issue swaps to a solid, saturated background — a plain
+    // color change, no animation and no transition, on the instant the
+    // pointer enters and gone the instant it leaves. Only one row's marks
+    // are highlighted at a time. `starts` lists every occurrence (repeat
+    // rows highlight all their words together, so both uses of an echoed
+    // word are visible at once).
+    function hoverStart(starts) {
+      hoverStop();
       if (!enabled) return;
       starts.forEach(function (s) {
         var m = backdrop.querySelector('mark[data-start="' + s + '"]');
-        if (m) m.classList.add("mcphee-mark-pulse");
+        if (m) m.classList.add("mcphee-mark-hover");
       });
     }
 
-    function pulseStop() {
-      backdrop.querySelectorAll(".mcphee-mark-pulse").forEach(function (m) {
-        m.classList.remove("mcphee-mark-pulse");
+    function hoverStop() {
+      backdrop.querySelectorAll(".mcphee-mark-hover").forEach(function (m) {
+        m.classList.remove("mcphee-mark-hover");
       });
     }
 
@@ -1078,8 +1126,8 @@ var McPhee = (function () {
       // changes classification without changing the text).
       refresh: refresh,
       scrollToOffset: scrollToOffset,
-      pulseStart: pulseStart,
-      pulseStop: pulseStop,
+      hoverStart: hoverStart,
+      hoverStop: hoverStop,
       visibleStarts: visibleStarts,
       setRules: function (o) {
         renderOpts.rules = self.resolveRules(o);
@@ -1276,21 +1324,22 @@ var McPhee = (function () {
     }
 
     // Row behaviors shared by every issue type: hovering scrolls the text
-    // to the first occurrence and pulses EVERY occurrence for exactly as
-    // long as the pointer stays (echo rows pulse both words); leaving stops
-    // the pulse instantly. Clicking the row background acts like "select".
+    // to the first occurrence and solidly highlights EVERY occurrence for
+    // exactly as long as the pointer stays (repeat rows highlight both
+    // words); leaving clears it instantly. Clicking the row background acts
+    // like "select".
     function wireRow(row) {
       var el = row.el;
       el.addEventListener("mouseenter", function () {
         if (config.controller && config.controller.scrollToOffset) {
           config.controller.scrollToOffset(row.start);
         }
-        if (config.controller && config.controller.pulseStart) {
-          config.controller.pulseStart(row.spans.map(function (s) { return s[0]; }));
+        if (config.controller && config.controller.hoverStart) {
+          config.controller.hoverStart(row.spans.map(function (s) { return s[0]; }));
         }
       });
       el.addEventListener("mouseleave", function () {
-        if (config.controller && config.controller.pulseStop) config.controller.pulseStop();
+        if (config.controller && config.controller.hoverStop) config.controller.hoverStop();
       });
       el.addEventListener("click", function (e) {
         if (e.target.closest("button")) return;
@@ -1616,13 +1665,22 @@ var McPhee = (function () {
       });
 
       // Repetition rows: no autofix (word choice is the author's), just
-      // hover-to-scroll plus a session dismiss.
+      // hover-to-scroll plus a session dismiss. Obscure rows additionally
+      // carry "not rare" — the permanent correction for frequency-list gaps
+      // (contractions like "won't" are unranked): the word is treated as
+      // common from then on, in every text.
       repeatGroups.forEach(function (group, norm) {
         var label = document.createElement("span");
         label.className = "mcphee-panel-word mcphee-panel-word-" + group.kind;
         label.textContent = group.kind === "echo"
           ? group.value + " \u00d7" + group.count + " \u00b7 " + group.distance + " word" + (group.distance === 1 ? "" : "s") + " apart"
           : group.value + " \u00d7" + group.count + " \u00b7 rare word reused";
+        var notRare = group.kind === "obscure"
+          ? button("not rare", "mcphee-panel-ignore", function () {
+              self.markNotRare(norm);
+              afterAction();
+            })
+          : null;
         var dismiss = button("dismiss", "mcphee-panel-adddict", function () {
           self.ignoreRepeat(norm);
           afterAction();
@@ -1634,7 +1692,7 @@ var McPhee = (function () {
           rank: SECTION_RANK[group.kind],
           start: group.start,
           spans: group.spans,
-          el: panelRow([label], null, dismiss, sel),
+          el: panelRow([label], notRare, dismiss, sel),
         });
       });
 

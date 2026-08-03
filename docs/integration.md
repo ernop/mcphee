@@ -85,7 +85,8 @@ ctl.refresh(true);        // force full regeneration: styles re-mirrored,
                           // geometry re-synced, marks rebuilt (the panel's
                           // "↻ recheck" button calls this)
 ctl.scrollToOffset(120);  // scroll the textarea to a character offset
-ctl.pulseStart([120]);    // pulse marks at offsets; pulseStop() ends it
+ctl.hoverStart([120]);    // solidly highlight marks at offsets (no animation,
+                          // no transition); hoverStop() clears instantly
 ctl.setRules({ profile: "casual" });  // switch rule profile live
 ctl.setEnabled(false);    // toggle off (restores native browser spellcheck)
 ctl.detach();
@@ -93,9 +94,10 @@ ctl.detach();
 // Live issues panel: suggestion buttons (replace-all, undo-preserving),
 // add-to-dictionary, ignore (persistent per-word mute with a 3s undo chip
 // and an "ignored (N)" manager), capitalize, collapse extra spaces.
-// Hovering a row scrolls the textarea to the issue and pulses EVERY
-// occurrence for exactly as long as the pointer stays; clicking anywhere on
-// the row selects the issue's text. The header's "↻ recheck" button
+// Hovering a row scrolls the textarea to the issue and solidly recolors
+// EVERY occurrence (repeat rows recolor both uses at once) for exactly as
+// long as the pointer stays — a plain background change, no animation or
+// transition; clicking anywhere on the row selects the issue's text. The header's "↻ recheck" button
 // force-regenerates the overlay and the panel. A formality chooser
 // (casual/normal/formal -> the three profiles) is always visible, persisted
 // per origin; its ⚙ config opens per-rule checkboxes and the repetition
@@ -113,6 +115,17 @@ panel.setFormality("strict"); panel.getFormality();
 // Persistent per-word mute (what the panel's ignore buttons call):
 sw.ignoreWord("Helbro"); sw.unignoreWord("Helbro");
 sw.listIgnoredWords(); sw.unignoreAll();
+
+// Persistent not-rare list (what the panel's "not rare" button on obscure
+// rows calls). The vendored frequency list is the top ~30k of Peter
+// Norvig's Google Web Trillion Word Corpus counts; that corpus lost
+// apostrophes, so contractions ("won't") are unranked and would count as
+// obscure. Marked words rank as maximally common — never obscure, exempt
+// from echo. Stored at customDictStorageKey + ":notrare". Unranked
+// contractions also fall back to their apostrophe-stripped rank
+// automatically (won't -> wont).
+sw.markNotRare("won't"); sw.unmarkNotRare("won't");
+sw.listNotRareWords();
 
 // One-click local fix, applied through the browser's editing pipeline so
 // Ctrl+Z still works (one undo step):

@@ -1,6 +1,6 @@
 """Real-browser suite (Playwright + demo.html): the things the Node tests
-cannot see — overlay visibility, wrap-parity integrity, hover pulse, panel
-section order, and suggestion acceptance.
+cannot see — overlay visibility, wrap-parity integrity, hover highlighting,
+panel section order, and suggestion acceptance.
 
 Geometry is never asserted with pixel math. The library's own integrity
 self-check is the oracle: if the overlay stays visible, content and wrap
@@ -89,15 +89,46 @@ def main():
         ok(st["marks"] > 0, "marks rendered")
         ok(not any("integrity" in w for w in warnings), "no integrity warnings on load")
 
-        # --- hover pulse: instant on, instant off, one row at a time ---
+        # --- hover highlight: solid color change, instant on/off, no motion ---
         page.locator(".mcphee-panel-item").first.hover()
         page.wait_for_timeout(150)
-        ok(page.evaluate("document.querySelectorAll('.mcphee-mark-pulse').length") >= 1,
-           "hovering a row pulses its mark(s)")
+        hov = page.evaluate("""() => {
+            const marks = document.querySelectorAll(".mcphee-mark-hover");
+            const cs = marks[0] ? getComputedStyle(marks[0]) : null;
+            return {
+                count: marks.length,
+                animation: cs ? cs.animationName : null,
+                transition: cs ? cs.transitionDuration : null,
+            };
+        }""")
+        ok(hov["count"] >= 1, "hovering a row highlights its mark(s)")
+        ok(hov["animation"] == "none", f"no animation on the hover highlight ({hov['animation']})")
+        ok(hov["transition"] in ("0s", None) or all(t.strip() == "0s" for t in (hov["transition"] or "").split(",")),
+           f"no transition on the hover highlight ({hov['transition']})")
         page.mouse.move(0, 0)
         page.wait_for_timeout(150)
-        ok(page.evaluate("document.querySelectorAll('.mcphee-mark-pulse').length") == 0,
-           "leaving the row stops the pulse instantly")
+        ok(page.evaluate("document.querySelectorAll('.mcphee-mark-hover').length") == 0,
+           "leaving the row clears the highlight instantly")
+
+        # --- repeat rows highlight EVERY occurrence at once ---
+        repeat_row = page.locator(
+            ".mcphee-panel-item:has(.mcphee-panel-word-obscure), "
+            ".mcphee-panel-item:has(.mcphee-panel-word-echo)").first
+        repeat_row.hover()
+        page.wait_for_timeout(150)
+        ok(page.evaluate("document.querySelectorAll('.mcphee-mark-hover').length") >= 2,
+           "hovering a repeat row highlights both/all uses")
+        page.mouse.move(0, 0)
+
+        # --- "not rare" permanently exempts a frequency-list gap ---
+        obscure_rows = page.locator(".mcphee-panel-item:has(.mcphee-panel-word-obscure)")
+        before = obscure_rows.count()
+        if before:
+            obscure_rows.first.locator("button", has_text="not rare").click()
+            page.wait_for_timeout(400)
+            ok(obscure_rows.count() < before, "'not rare' removes the obscure row")
+        else:
+            ok(False, "demo has an obscure row to mark not rare")
 
         # --- panel section order: one color block per issue type ---
         order = page.evaluate("""() => {

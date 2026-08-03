@@ -1,5 +1,27 @@
 # McPhee changelog
 
+## 3.8.0 — 2026-08-03
+
+Hover highlighting is now a solid color change, and frequency-list gaps get
+a permanent correction.
+
+- Hovering a panel row solidly recolors every occurrence of the issue —
+  full-word background swap, amber, applied the instant the pointer enters
+  and removed the instant it leaves. No pulsing, no animation, no
+  transitions, anywhere. Repeat rows (echo, obscure) recolor both/all uses
+  at once, so the two occurrences under discussion are always visible
+  together. Controller API: `hoverStart(starts)` / `hoverStop()` replace
+  `pulseStart` / `pulseStop`.
+- "not rare": obscure-repeat rows carry a persistent button that marks the
+  word as not actually rare — the correction for gaps in the vendored
+  frequency list (its web corpus lost apostrophes, so contractions like
+  "won't" are unranked and counted as obscure). Marked words rank as
+  maximally common: never obscure, exempt from echo, in every text, stored
+  per browser. Checker API: `markNotRare`, `unmarkNotRare`,
+  `listNotRareWords`.
+- Rank lookups for contractions fall back to the apostrophe-stripped form
+  (won't → wont) before counting a word as unranked.
+
 ## 3.7.0 — 2026-08-03
 
 Fixes the disappearing highlights, separates the repetition sections, and
