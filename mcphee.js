@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.0.0";
+  var VERSION = "3.0.1";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -646,7 +646,7 @@ var McPhee = (function () {
     "lineHeight", "textTransform", "wordSpacing", "textIndent",
     "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
     "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth",
-    "borderRadius", "boxSizing",
+    "borderRadius",
   ];
 
   Checker.prototype.renderHtml = function (text, opts) {
@@ -695,6 +695,11 @@ var McPhee = (function () {
     MIRRORED_STYLES.forEach(function (prop) {
       backdrop.style[prop] = computed[prop];
     });
+    // Always border-box, never mirrored: syncGeometry sets the OUTER box
+    // (clientWidth + borders). Mirroring a content-box textarea would add
+    // the mirrored padding/borders on top of that, wrapping the backdrop
+    // ~18px wider than the textarea and drifting every mark leftward.
+    backdrop.style.boxSizing = "border-box";
     backdrop.style.background = computed.backgroundColor;
 
     textarea.parentNode.insertBefore(host, textarea);

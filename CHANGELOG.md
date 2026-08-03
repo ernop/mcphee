@@ -1,5 +1,17 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.0.1 — 2026-08-02
+
+- Fix overlay mark drift on `content-box` textareas: the backdrop is now
+  always `border-box` instead of mirroring the textarea's `box-sizing`.
+  Mirroring content-box double-counted padding/borders, so the backdrop
+  wrapped ~18px wider and every mark drifted leftward within wrapped lines.
+  Consumers with a global `* { box-sizing: border-box }` reset (the fuseki
+  editor) never saw it; the demo page did. Diagnosed with a computed-style
+  diff, verified pixel-aligned in-browser.
+- Panel rows no longer wrap: `.mcphee-panel-item` is `nowrap` with
+  non-shrinking children. Give the panel container ~430px or more.
+
 ## 3.0.0 — 2026-08-02
 
 Breaking: `guardForm`'s `allowOverride`/`overrideMs` options are gone. A

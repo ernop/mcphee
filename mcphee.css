@@ -85,11 +85,13 @@
 .mcphee-panel-item {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   padding: 4px 0;
   border-bottom: 1px solid #e5e7eb;
 }
+
+.mcphee-panel-item > * { flex-shrink: 0; white-space: nowrap; }
 
 /* Hovering a row scrolls the textarea to the issue's location. */
 .mcphee-panel-item:hover { background: #f3f7fc; }
