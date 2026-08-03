@@ -68,6 +68,10 @@ const sw = await McPhee.create({
   extraWords: ["recraft", "grok"],          // project jargon, never flagged
   customDictStorageKey: "myapp_mcphee",  // per-user dictionary (localStorage)
   profile: "standard",                      // default rule profile
+  // Exclusion zones — spans invisible to EVERY rule and every fix. Most
+  // consumers have some markup that isn't prose; list it here. An array
+  // of global RegExps or a function (text) => [[start, end), ...]:
+  exclude: [/\{\{[\s\S]*?\}\}/g],           // e.g. fuseki component blocks
   // Repetition-detector tuning (defaults shown):
   // echoWindowWords: 50, echoCommonRank: 2000, obscureRank: 10000,
 });
@@ -189,7 +193,9 @@ the permanent repetition opt-out. The panel's `dismiss` button
 
 ## Rule catalog — exact parameters
 
-Every rule, precisely what fires it, and what exempts it:
+Every rule, precisely what fires it, and what exempts it. Text inside an
+exclusion zone (`options.exclude`) fires nothing at all — the checker
+treats it as not being there:
 
 - **misspelled** (pink) — a word matching `[A-Za-z]+(?:['’][A-Za-z]+)*`,
   entirely lowercase, ≥2 letters, not in the Hunspell dictionary, whose

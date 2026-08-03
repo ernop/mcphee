@@ -1,5 +1,18 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.5.0 — 2026-08-02
+
+- Exclusion zones: `options.exclude` — an array of global RegExps (each
+  match is a zone) or a function `(text) -> [[start, end), ...]` — makes
+  matched spans invisible to EVERY rule: no spelling/space/capitalization/
+  culture flags, no repetition counting (an excluded word is not an echo
+  partner), no `localFix`/`applyFixes` edits, no panel replace-all or
+  collapse touching them, and `concordance`/`repetitionReport` skip them.
+  Accepted at `create` (instance default) and per call (`opts.exclude`;
+  pass `null` to disable). The host page knows its own markup: fuseki
+  excludes its `{{ }}` component blocks; other consumers might exclude
+  fenced code, template tags, or bare URLs.
+
 ## 3.4.0 — 2026-08-02
 
 - Hover pulse rework: pulsing now starts the instant the pointer enters a

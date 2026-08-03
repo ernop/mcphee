@@ -84,7 +84,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.4.0";
+  var VERSION = "3.5.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -290,6 +290,13 @@ var McPhee = (function () {
     // Per-project additions to the culture list (e.g. group names like
     // "Black" that are too ambiguous for the default list).
     this.cultureWords = new Set((options.cultureWords || []).map(function (w) { return w.toLowerCase(); }));
+    // Exclusion zones: spans of text invisible to EVERY rule — no spelling,
+    // spacing, capitalization, culture, or repetition checks, and no fixes.
+    // An array of global RegExps (each match is a zone) or a function
+    // (text) -> [[start, end), ...]. The host page knows its own markup:
+    // fuseki excludes {{ }} component blocks, a code site might exclude
+    // fenced blocks, a URL-heavy site bare URLs.
+    this.exclude = options.exclude || null;
     // Persistent per-word mute: unlike +dict this doesn't teach the
     // dictionary anything, it just stops flagging the exact word.
     this.ignoreStorageKey = options.ignoreStorageKey || (this.storageKey + ":ignored");
@@ -318,6 +325,52 @@ var McPhee = (function () {
     if (r === undefined) r = this.freqRank.get(pluralKey(norm));
     return r === undefined ? Infinity : r;
   };
+
+  // Resolves the exclusion option (per-call opts.exclude wins over the
+  // instance default) into merged, sorted [start, end) ranges.
+  Checker.prototype.excludedRanges = function (text, opts) {
+    var src = (opts && opts.exclude !== undefined) ? opts.exclude : this.exclude;
+    if (!src) return [];
+    var ranges = [];
+    if (typeof src === "function") {
+      (src(text) || []).forEach(function (r) { ranges.push([r[0], r[1]]); });
+    } else {
+      src.forEach(function (re) {
+        if (!re.global) {
+          var single = re.exec(text);
+          if (single && single[0].length) ranges.push([single.index, single.index + single[0].length]);
+          return;
+        }
+        re.lastIndex = 0;
+        var m;
+        while ((m = re.exec(text)) !== null) {
+          if (m[0].length === 0) { re.lastIndex++; continue; }
+          ranges.push([m.index, m.index + m[0].length]);
+        }
+      });
+    }
+    ranges.sort(function (a, b) { return a[0] - b[0]; });
+    var merged = [];
+    ranges.forEach(function (r) {
+      var last = merged[merged.length - 1];
+      if (last && r[0] <= last[1]) {
+        if (r[1] > last[1]) last[1] = r[1];
+      } else {
+        merged.push(r.slice());
+      }
+    });
+    return merged;
+  };
+
+  // Membership test over sorted ranges for monotonically non-decreasing
+  // query positions (how tokenizers walk text) — O(n + m) overall.
+  function rangeCursor(ranges) {
+    var i = 0;
+    return function (pos) {
+      while (i < ranges.length && ranges[i][1] <= pos) i++;
+      return i < ranges.length && pos >= ranges[i][0];
+    };
+  }
 
   // opts may carry { profile: "strict" } and/or { rules: { unknown: false } };
   // rules win over the profile, the profile wins over the instance default.
@@ -448,16 +501,23 @@ var McPhee = (function () {
   //                  times anywhere (carries norm + count, all flagged)
   //   culture        lowercase nation/group/language/religion name
   //                  (carries expected, the properly-cased form)
-  // Words on the persistent ignore list are skipped entirely. Only issues
-  // are returned; clean text yields [].
+  // Words on the persistent ignore list are skipped entirely, and text
+  // inside exclusion zones (options.exclude) is invisible to every rule.
+  // Only issues are returned; clean text yields [].
   Checker.prototype.analyze = function (text, opts) {
     var rules = this.resolveRules(opts);
     var issues = [];
     var words = [];
     var starts = rules.sentenceCapitalization ? sentenceStartOffsets(text) : null;
+    var excludedList = this.excludedRanges(text, opts);
+    var excluded = rangeCursor(excludedList);
     TOKEN_RE.lastIndex = 0;
     var m;
     while ((m = TOKEN_RE.exec(text)) !== null) {
+      // Tokens touching an exclusion zone never reach any rule — not even
+      // the repetition word list (an excluded "gallery" is not an echo of
+      // a prose "gallery").
+      if (excluded(m.index) || excluded(m.index + m[0].length - 1)) continue;
       if (m[1] !== undefined) {
         var cls = this.classify(m[1]);
         words.push({ value: m[1], start: m.index, end: m.index + m[1].length, cls: cls });
@@ -492,7 +552,8 @@ var McPhee = (function () {
     }
     if (rules.terminalPunctuation) {
       var trimmed = text.replace(/\s+$/, "");
-      if (trimmed.length && !TERMINAL_PUNCT_RE.test(trimmed)) {
+      if (trimmed.length && !TERMINAL_PUNCT_RE.test(trimmed)
+        && !excluded(trimmed.length - 1)) {
         issues.push({ kind: "punctuation", value: trimmed.slice(-1), start: trimmed.length - 1, end: trimmed.length, classification: "punctuation" });
       }
     }
@@ -571,9 +632,11 @@ var McPhee = (function () {
     var target = pluralKey(normWord(String(word)));
     var occurrences = [];
     var total = 0;
+    var excluded = rangeCursor(this.excludedRanges(text));
     WORD_RE.lastIndex = 0;
     var m;
     while ((m = WORD_RE.exec(text)) !== null) {
+      if (excluded(m.index)) continue;
       if (pluralKey(normWord(m[0])) === target) {
         occurrences.push({ value: m[0], start: m.index, end: m.index + m[0].length, wordIndex: total });
       }
@@ -601,9 +664,11 @@ var McPhee = (function () {
     var limit = opts.limit || 25;
     var byKey = new Map();
     var total = 0;
+    var excluded = rangeCursor(this.excludedRanges(text, opts));
     WORD_RE.lastIndex = 0;
     var m;
     while ((m = WORD_RE.exec(text)) !== null) {
+      if (excluded(m.index)) continue;
       var norm = normWord(m[0]);
       if (norm.length >= minLength && !this.customWords.has(norm) && !this.extraWords.has(norm)) {
         var key = pluralKey(norm);
@@ -688,7 +753,12 @@ var McPhee = (function () {
     var wordChanges = [];
     var self = this;
     var starts = rules.sentenceCapitalization ? sentenceStartOffsets(text) : null;
+    // Exclusion zones are never fixed. The word pass tests against ranges
+    // computed on the original text; corrections can shift later offsets,
+    // so the space pass recomputes ranges on its own (post-fix) text.
+    var excludedWords = rangeCursor(this.excludedRanges(text, opts));
     var fixedWords = text.replace(WORD_RE, function (word, offset) {
+      if (excludedWords(offset) || excludedWords(offset + word.length - 1)) return word;
       var cls = self.classify(word);
       if (cls === "misspelled" && rules.misspelled) {
         var correction = self.pickCorrection(word);
@@ -706,8 +776,10 @@ var McPhee = (function () {
       return word;
     });
     var spaceRuns = 0;
+    var excludedSpaces = rangeCursor(this.excludedRanges(fixedWords, opts));
     var fixed = rules.doublespace
       ? fixedWords.replace(/ {2,}/g, function (run, offset) {
+          if (excludedSpaces(offset) || excludedSpaces(offset + run.length - 1)) return run;
           var v = classifySpaceRun(fixedWords, offset, run.length);
           if (!v) return run;
           spaceRuns++;
@@ -1069,9 +1141,13 @@ var McPhee = (function () {
 
     function replaceAllOccurrences(word, replacement) {
       var re = new RegExp("\\b" + escapeRegExp(word) + "\\b", "g");
-      var newText = textarea.value.replace(re, replacement);
-      if (newText !== textarea.value) {
-        replaceRange(textarea, 0, textarea.value.length, newText);
+      var value = textarea.value;
+      var excluded = rangeCursor(self.excludedRanges(value, analyzeOpts));
+      var newText = value.replace(re, function (match, offset) {
+        return excluded(offset) || excluded(offset + match.length - 1) ? match : replacement;
+      });
+      if (newText !== value) {
+        replaceRange(textarea, 0, value.length, newText);
       }
       afterAction();
     }
@@ -1542,7 +1618,9 @@ var McPhee = (function () {
         slabel.textContent = doubleSpaces + " extra-space run" + (doubleSpaces === 1 ? "" : "s");
         var collapseBtn = button("collapse", "mcphee-panel-suggestion", function () {
           var value = textarea.value;
+          var excluded = rangeCursor(self.excludedRanges(value, analyzeOpts));
           var newText = value.replace(/ {2,}/g, function (run, offset) {
+            if (excluded(offset) || excluded(offset + run.length - 1)) return run;
             var v = classifySpaceRun(value, offset, run.length);
             return v ? v.collapseTo : run;
           });

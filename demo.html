@@ -31,6 +31,8 @@ fABJ
 SMITTH Smith Smytye
     indented lines are fine (Markdown code block)
 
+{{gallery photso=zzqx   layr=asdfgh usa}} nothing inside that component block is checked
+
 this line has no ending punctuation, nor unktuousness
 #detect entire-article reuse of same obscure word: this closing line is padded well past the fifty-word window on purpose, so when the writer turns obstreperously verbose once more, the far-apart pair earns the green mark instead of the lavender one</textarea>
 </div>
@@ -69,6 +71,9 @@ this line has no ending punctuation, nor unktuousness
     freqUrl: "vendor/wordfreq/en-30k.txt",
     extraWords: ["mcphee"],
     customDictStorageKey: "mcphee_demo_dict",
+    // Exclusion zones: {{ }} blocks are markup, not prose — invisible to
+    // every rule and every fix.
+    exclude: [/\{\{[\s\S]*?\}\}/g],
   });
 
   const editor = document.getElementById("editor");
