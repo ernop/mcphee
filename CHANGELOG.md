@@ -1,5 +1,22 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.2.0 — 2026-08-02
+
+- Force regenerate: the panel header now carries a `↻ recheck` button that
+  fully rebuilds the overlay (styles, geometry, marks) and the panel.
+  `controller.refresh(true)` is the same operation programmatically.
+- `refresh(true)` and `setEnabled(true)` now re-mirror the textarea's
+  computed styles instead of trusting the copy taken at attach time, so
+  late-loading fonts, theme switches, or zoom changes can no longer leave
+  the backdrop wrapping differently than the textarea.
+- The backdrop additionally mirrors `white-space`, `overflow-wrap`,
+  `word-break`, `tab-size`, and `direction` from the textarea (previously
+  stylesheet defaults were trusted), guarding against site CSS that
+  restyles textareas.
+- Verified aligned in-browser across: programmatic phrase moves, real
+  typing, toggle off → edit → toggle on, scrolling, element resize, and
+  110% zoom — on both the demo page and the fuseki article editor.
+
 ## 3.1.0 — 2026-08-02
 
 - Panel rows are a three-slot grid (content | dict-action | select): every

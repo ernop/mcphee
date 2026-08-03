@@ -74,7 +74,9 @@ const sw = await McPhee.create({
 // Live highlighting behind a textarea (native typing/selection untouched):
 const ctl = sw.attach(document.querySelector("textarea"));
 ctl.refresh();            // after programmatic .value writes (also auto-polled)
-ctl.refresh(true);        // force re-render (e.g. after addCustomWord)
+ctl.refresh(true);        // force full regeneration: styles re-mirrored,
+                          // geometry re-synced, marks rebuilt (the panel's
+                          // "↻ recheck" button calls this)
 ctl.scrollToOffset(120);  // scroll the textarea to a character offset
 ctl.setRules({ profile: "casual" });  // switch rule profile live
 ctl.setEnabled(false);    // toggle off (restores native browser spellcheck)
@@ -83,7 +85,8 @@ ctl.detach();
 // Live issues panel: suggestion buttons (replace-all, undo-preserving),
 // add-to-dictionary, capitalize, collapse extra spaces; hovering a row
 // scrolls the textarea to that issue's location, and every row's `select`
-// button focuses the textarea with the issue's text selected:
+// button focuses the textarea with the issue's text selected. The header's
+// "↻ recheck" button force-regenerates the overlay and the panel:
 const panel = sw.attachPanel({ textarea, container: sidebarDiv, controller: ctl });
 
 // One-click local fix, applied through the browser's editing pipeline so

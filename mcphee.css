@@ -93,7 +93,15 @@
 .mcphee-panel-header {
   font-weight: 600;
   margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
+
+/* Force-regenerate: full overlay + panel rebuild. */
+.mcphee-panel-recheck { color: #374151; border-color: #d1d5db; }
+.mcphee-panel-recheck:hover { background: #f3f4f6; }
 
 /* Three fixed slots — content | dict-action | select — so the "+ dict" /
    "dismiss" and "select" buttons align vertically across every row. */

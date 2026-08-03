@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.1.0";
+  var VERSION = "3.2.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -644,6 +644,10 @@ var McPhee = (function () {
   var MIRRORED_STYLES = [
     "fontFamily", "fontSize", "fontWeight", "fontStyle", "letterSpacing",
     "lineHeight", "textTransform", "wordSpacing", "textIndent",
+    // Wrapping behavior is mirrored from the live textarea rather than
+    // trusted to the stylesheet defaults, so site CSS that restyles
+    // textareas (word-break, tab-size, RTL) can't desynchronize the wrap.
+    "whiteSpace", "overflowWrap", "wordBreak", "tabSize", "direction",
     "paddingTop", "paddingRight", "paddingBottom", "paddingLeft",
     "borderTopWidth", "borderRightWidth", "borderBottomWidth", "borderLeftWidth",
     "borderRadius",
@@ -692,15 +696,22 @@ var McPhee = (function () {
     backdrop.className = "mcphee-backdrop";
     backdrop.setAttribute("aria-hidden", "true");
 
-    MIRRORED_STYLES.forEach(function (prop) {
-      backdrop.style[prop] = computed[prop];
-    });
-    // Always border-box, never mirrored: syncGeometry sets the OUTER box
-    // (clientWidth + borders). Mirroring a content-box textarea would add
-    // the mirrored padding/borders on top of that, wrapping the backdrop
-    // ~18px wider than the textarea and drifting every mark leftward.
-    backdrop.style.boxSizing = "border-box";
-    backdrop.style.background = computed.backgroundColor;
+    // Styles are re-mirrored on every forced refresh, not just at attach:
+    // late-loading fonts, theme switches, or zoom changes after attach would
+    // otherwise leave the backdrop wrapping text differently than the
+    // textarea, drifting every mark.
+    function mirrorStyles() {
+      MIRRORED_STYLES.forEach(function (prop) {
+        backdrop.style[prop] = computed[prop];
+      });
+      // Always border-box, never mirrored: syncGeometry sets the OUTER box
+      // (clientWidth + borders). Mirroring a content-box textarea would add
+      // the mirrored padding/borders on top of that, wrapping the backdrop
+      // ~18px wider than the textarea and drifting every mark leftward.
+      backdrop.style.boxSizing = "border-box";
+      backdrop.style.background = computed.backgroundColor;
+    }
+    mirrorStyles();
 
     textarea.parentNode.insertBefore(host, textarea);
     host.appendChild(backdrop);
@@ -724,9 +735,16 @@ var McPhee = (function () {
       backdrop.style.height = (textarea.clientHeight + bt + bb) + "px";
     }
 
+    // refresh() re-renders only when the text changed; refresh(true) is a
+    // full regeneration — styles re-mirrored, geometry re-synced, marks
+    // rebuilt from scratch — the recovery path for any drift.
     function refresh(force) {
       if (!enabled) return;
-      if (force === true || textarea.value !== lastRendered) {
+      if (force === true) {
+        mirrorStyles();
+        lastRendered = null;
+      }
+      if (textarea.value !== lastRendered) {
         lastRendered = textarea.value;
         backdrop.innerHTML = self.renderHtml(textarea.value, renderOpts);
         syncGeometry();
@@ -801,7 +819,9 @@ var McPhee = (function () {
         enabled = !!on;
         backdrop.style.visibility = enabled ? "visible" : "hidden";
         textarea.spellcheck = !enabled;
-        if (enabled) { lastRendered = null; refresh(); }
+        // Full regeneration on re-enable: anything (styles, geometry, text)
+        // may have changed while the overlay was off.
+        if (enabled) refresh(true);
       },
       detach: function () {
         clearInterval(pollTimer);
@@ -932,9 +952,19 @@ var McPhee = (function () {
 
       var header = document.createElement("div");
       header.className = "mcphee-panel-header";
-      header.textContent = issues.length
+      var headerLabel = document.createElement("span");
+      headerLabel.textContent = issues.length
         ? issues.length + " issue" + (issues.length === 1 ? "" : "s")
         : "no issues";
+      header.appendChild(headerLabel);
+      // Manual escape hatch: full overlay regeneration (styles, geometry,
+      // marks) plus a fresh panel, for when anything looks stale.
+      var recheckBtn = button("\u21bb recheck", "mcphee-panel-recheck", function () {
+        refreshOverlay();
+        render();
+      });
+      recheckBtn.title = "Force full re-analysis and overlay redraw";
+      header.appendChild(recheckBtn);
       container.appendChild(header);
 
       // Group repeated words into a single row (remembering the first
