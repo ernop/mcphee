@@ -1,5 +1,13 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.1.0 — 2026-08-02
+
+- Panel rows are a three-slot grid (content | dict-action | select): every
+  `+ dict`/`dismiss` and every `select` button aligns vertically across rows.
+- Hovering a panel row now gently flashes the issue's mark in the text
+  (blue pulse, two beats) in addition to the hover-scroll. New controller
+  method `flashAt(offset)`; overlay marks carry `data-start`.
+
 ## 3.0.3 — 2026-08-02
 
 - Panel ordering refined per author feedback on 3.0.2: sections by issue

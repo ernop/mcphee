@@ -70,6 +70,19 @@
 /* Obscure repeat: a rare word used more than once in the text — light green. */
 .mcphee-mark-obscure { background: #d5efd5; }
 
+/* Gentle pulse when the issue's panel row is hovered, so the eye lands on
+   the mark right after the hover-scroll. */
+.mcphee-mark-flash {
+  animation: mcphee-flash 650ms ease-in-out 2;
+}
+
+@keyframes mcphee-flash {
+  50% {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
+    filter: saturate(2.5);
+  }
+}
+
 /* ---------- issues panel (attachPanel) ---------- */
 
 .mcphee-panel {
@@ -82,16 +95,28 @@
   margin-bottom: 6px;
 }
 
+/* Three fixed slots — content | dict-action | select — so the "+ dict" /
+   "dismiss" and "select" buttons align vertically across every row. */
 .mcphee-panel-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 62px 52px;
   align-items: center;
-  flex-wrap: nowrap;
   gap: 6px;
   padding: 4px 0;
   border-bottom: 1px solid #e5e7eb;
 }
 
-.mcphee-panel-item > * { flex-shrink: 0; white-space: nowrap; }
+.mcphee-panel-main {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mcphee-panel-main > * { flex-shrink: 0; }
 
 /* Hovering a row scrolls the textarea to the issue's location. */
 .mcphee-panel-item:hover { background: #f3f7fc; }
@@ -117,6 +142,16 @@
 
 .mcphee-panel-btn:hover { background: #f3f4f6; }
 .mcphee-panel-adddict { border-style: dashed; }
+
+/* The dict/dismiss and select buttons fill their grid slots so the columns
+   read as clean vertical lines. */
+.mcphee-panel-item > .mcphee-panel-adddict,
+.mcphee-panel-item > .mcphee-panel-select {
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+  text-align: center;
+}
 
 /* "Move cursor here": selects the issue's text in the textarea. */
 .mcphee-panel-select { color: #2563eb; border-color: #93c5fd; }

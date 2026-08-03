@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.0.3";
+  var VERSION = "3.1.0";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -663,11 +663,11 @@ var McPhee = (function () {
       if (issue.kind === "doublespace") {
         // The whole illegitimate run is one joined rectangle — no internal
         // divisions.
-        out.push('<mark class="mcphee-mark-doublespace">'
+        out.push('<mark class="mcphee-mark-doublespace" data-start="' + issue.start + '">'
           + text.slice(issue.start, issue.end) + "</mark>");
       } else {
         var cls = issue.kind === "word" ? issue.classification : issue.kind;
-        out.push('<mark class="mcphee-mark-' + cls + '">'
+        out.push('<mark class="mcphee-mark-' + cls + '" data-start="' + issue.start + '">'
           + escapeHtml(text.slice(issue.start, issue.end)) + "</mark>");
       }
       last = issue.end;
@@ -776,11 +776,23 @@ var McPhee = (function () {
       }
     }
 
+    // Gently pulses the mark at `start` so the eye finds it after a
+    // hover-scroll. Restarting the class re-triggers the CSS animation.
+    function flashAt(start) {
+      if (!enabled) return;
+      var m = backdrop.querySelector('mark[data-start="' + start + '"]');
+      if (!m) return;
+      m.classList.remove("mcphee-mark-flash");
+      void m.offsetWidth;
+      m.classList.add("mcphee-mark-flash");
+    }
+
     return {
       // refresh(true) forces a re-render (e.g. after addCustomWord, which
       // changes classification without changing the text).
       refresh: refresh,
       scrollToOffset: scrollToOffset,
+      flashAt: flashAt,
       setRules: function (o) {
         renderOpts.rules = self.resolveRules(o);
         refresh(true);
@@ -846,12 +858,13 @@ var McPhee = (function () {
       return b;
     }
 
-    // Hovering a row scrolls the textarea to that issue's location so the
-    // author can see what they'd be correcting.
+    // Hovering a row scrolls the textarea to that issue's location and
+    // gently flashes its mark so the author's eye lands on it immediately.
     function scrollOnHover(row, offset) {
       if (!config.controller || !config.controller.scrollToOffset) return;
       row.addEventListener("mouseenter", function () {
         config.controller.scrollToOffset(offset);
+        if (config.controller.flashAt) config.controller.flashAt(offset);
       });
     }
 
@@ -870,14 +883,26 @@ var McPhee = (function () {
       });
     }
 
-    function wordRow(value, classification, count, firstStart) {
+    // Rows are three grid slots — content, dict-action, select — so the
+    // "+ dict"/"dismiss" and "select" buttons align vertically across rows.
+    function panelRow(offset, mainChildren, actionBtn, selBtn) {
       var row = document.createElement("div");
       row.className = "mcphee-panel-item";
-      scrollOnHover(row, firstStart);
+      scrollOnHover(row, offset);
+      var main = document.createElement("span");
+      main.className = "mcphee-panel-main";
+      mainChildren.forEach(function (c) { main.appendChild(c); });
+      row.appendChild(main);
+      row.appendChild(actionBtn || document.createElement("span"));
+      row.appendChild(selBtn);
+      return row;
+    }
+
+    function wordRow(value, classification, count, firstStart) {
       var label = document.createElement("span");
       label.className = "mcphee-panel-word mcphee-panel-word-" + classification;
       label.textContent = count > 1 ? value + " \u00d7" + count : value;
-      row.appendChild(label);
+      var main = [label];
       if (classification === "misspelled") {
         var seen = new Set();
         var preferred = self.pickCorrection(value);
@@ -886,19 +911,19 @@ var McPhee = (function () {
           var key = s.toLowerCase();
           if (seen.has(key) || seen.size >= 3) return;
           seen.add(key);
-          row.appendChild(button(s, "mcphee-panel-suggestion", function () {
+          main.push(button(s, "mcphee-panel-suggestion", function () {
             replaceAllOccurrences(value, s);
           }));
         });
       }
-      row.appendChild(button("+ dict", "mcphee-panel-adddict", function () {
+      var dict = button("+ dict", "mcphee-panel-adddict", function () {
         self.addCustomWord(value);
         afterAction();
-      }));
-      row.appendChild(selectButton(function (i) {
+      });
+      var sel = selectButton(function (i) {
         return i.kind === "word" && i.value === value;
-      }));
-      return row;
+      });
+      return panelRow(firstStart, main, dict, sel);
     }
 
     function render() {
@@ -967,35 +992,31 @@ var McPhee = (function () {
       // Repetition rows: no autofix (word choice is the author's), just
       // hover-to-scroll plus a session dismiss.
       repeatGroups.forEach(function (group, norm) {
-        var row = document.createElement("div");
-        row.className = "mcphee-panel-item";
-        scrollOnHover(row, group.start);
         var label = document.createElement("span");
         label.className = "mcphee-panel-word mcphee-panel-word-" + group.kind;
         label.textContent = group.kind === "echo"
           ? group.value + " \u00d7" + group.count + " \u00b7 " + group.distance + " word" + (group.distance === 1 ? "" : "s") + " apart"
           : group.value + " \u00d7" + group.count + " \u00b7 rare word reused";
-        row.appendChild(label);
-        row.appendChild(button("dismiss", "mcphee-panel-adddict", function () {
+        var dismiss = button("dismiss", "mcphee-panel-adddict", function () {
           self.ignoreRepeat(norm);
           afterAction();
-        }));
-        row.appendChild(selectButton(function (i) {
+        });
+        var sel = selectButton(function (i) {
           return (i.kind === "echo" || i.kind === "obscure") && i.norm === norm;
-        }));
-        rows.push({ rank: SECTION_RANK[group.kind], start: group.start, el: row });
+        });
+        rows.push({
+          rank: SECTION_RANK[group.kind],
+          start: group.start,
+          el: panelRow(group.start, [label], dismiss, sel),
+        });
       });
 
       issues.forEach(function (issue) {
         if (issue.kind === "capitalization") {
-          var row = document.createElement("div");
-          row.className = "mcphee-panel-item";
-          scrollOnHover(row, issue.start);
           var label = document.createElement("span");
           label.className = "mcphee-panel-word mcphee-panel-word-capitalization";
           label.textContent = issue.value;
-          row.appendChild(label);
-          row.appendChild(button("Capitalize", "mcphee-panel-suggestion", function () {
+          var capBtn = button("Capitalize", "mcphee-panel-suggestion", function () {
             // Re-locate the issue in the current value; text may have moved.
             var current = self.analyze(textarea.value, analyzeOpts).find(function (i) {
               return i.kind === "capitalization" && i.value === issue.value;
@@ -1005,34 +1026,32 @@ var McPhee = (function () {
                 current.value.charAt(0).toUpperCase() + current.value.slice(1));
             }
             afterAction();
-          }));
-          row.appendChild(selectButton(function (i) {
+          });
+          var capSel = selectButton(function (i) {
             return i.kind === "capitalization" && i.value === issue.value;
-          }));
-          rows.push({ rank: SECTION_RANK.capitalization, start: issue.start, el: row });
+          });
+          rows.push({
+            rank: SECTION_RANK.capitalization,
+            start: issue.start,
+            el: panelRow(issue.start, [label, capBtn], null, capSel),
+          });
         } else if (issue.kind === "punctuation") {
-          var prow = document.createElement("div");
-          prow.className = "mcphee-panel-item mcphee-panel-note";
-          scrollOnHover(prow, issue.start);
           var ptext = document.createElement("span");
           ptext.textContent = "missing end punctuation";
-          prow.appendChild(ptext);
-          prow.appendChild(selectButton(function (i) {
+          var pSel = selectButton(function (i) {
             return i.kind === "punctuation";
-          }));
+          });
+          var prow = panelRow(issue.start, [ptext], null, pSel);
+          prow.classList.add("mcphee-panel-note");
           rows.push({ rank: SECTION_RANK.punctuation, start: issue.start, el: prow });
         }
       });
 
       if (doubleSpaces) {
-        var srow = document.createElement("div");
-        srow.className = "mcphee-panel-item";
-        scrollOnHover(srow, firstDoubleSpaceStart);
         var slabel = document.createElement("span");
         slabel.className = "mcphee-panel-word mcphee-panel-word-doublespace";
         slabel.textContent = doubleSpaces + " extra-space run" + (doubleSpaces === 1 ? "" : "s");
-        srow.appendChild(slabel);
-        srow.appendChild(button("collapse", "mcphee-panel-suggestion", function () {
+        var collapseBtn = button("collapse", "mcphee-panel-suggestion", function () {
           var value = textarea.value;
           var newText = value.replace(/ {2,}/g, function (run, offset) {
             var v = classifySpaceRun(value, offset, run.length);
@@ -1042,11 +1061,15 @@ var McPhee = (function () {
             replaceRange(textarea, 0, value.length, newText);
           }
           afterAction();
-        }));
-        srow.appendChild(selectButton(function (i) {
+        });
+        var sSel = selectButton(function (i) {
           return i.kind === "doublespace";
-        }));
-        rows.push({ rank: SECTION_RANK.doublespace, start: firstDoubleSpaceStart, el: srow });
+        });
+        rows.push({
+          rank: SECTION_RANK.doublespace,
+          start: firstDoubleSpaceStart,
+          el: panelRow(firstDoubleSpaceStart, [slabel, collapseBtn], null, sSel),
+        });
       }
 
       rows.sort(function (a, b) { return a.rank - b.rank || a.start - b.start; });
