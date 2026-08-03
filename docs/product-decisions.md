@@ -209,6 +209,17 @@ Linked from [AGENTS.md](../AGENTS.md).
   and an automatic rank fallback to the apostrophe-stripped form
   (won't → wont).
 
+## 2026-08-03 — URLs are not prose
+
+- Creator, on markdown links: "link format is like: [text of link](url)
+  right? i think anything within this kind of url area probably ought not
+  be considered a thing which we spell check against, right?" The `(url)`
+  part of markdown links and images, and bare URLs, are excluded from all
+  rules via the existing exclusion-zone mechanism in host configuration;
+  the link text in brackets stays checked. (Agent's note: this is host
+  config, not a library change — exclusion zones were built for exactly
+  this kind of non-prose span.)
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation
