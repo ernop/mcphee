@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.0.2";
+  var VERSION = "3.0.3";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -946,13 +946,22 @@ var McPhee = (function () {
         }
       });
 
-      // Every row carries the text position of its first occurrence; the
-      // panel is sorted by that, so it reads in the same order as the text.
+      // Sections by issue type — misspelled (red), unknown (blue),
+      // repetition, capitalization, punctuation, spaces — and document
+      // order (first occurrence) within each section.
+      var SECTION_RANK = {
+        misspelled: 0, unknown: 1, echo: 2, obscure: 2,
+        capitalization: 3, punctuation: 4, doublespace: 5,
+      };
       var rows = [];
 
       wordGroups.forEach(function (group, key) {
         var parts = key.split("\u0000");
-        rows.push({ start: group.start, el: wordRow(parts[0], parts[1], group.count, group.start) });
+        rows.push({
+          rank: SECTION_RANK[parts[1]],
+          start: group.start,
+          el: wordRow(parts[0], parts[1], group.count, group.start),
+        });
       });
 
       // Repetition rows: no autofix (word choice is the author's), just
@@ -974,7 +983,7 @@ var McPhee = (function () {
         row.appendChild(selectButton(function (i) {
           return (i.kind === "echo" || i.kind === "obscure") && i.norm === norm;
         }));
-        rows.push({ start: group.start, el: row });
+        rows.push({ rank: SECTION_RANK[group.kind], start: group.start, el: row });
       });
 
       issues.forEach(function (issue) {
@@ -1000,7 +1009,7 @@ var McPhee = (function () {
           row.appendChild(selectButton(function (i) {
             return i.kind === "capitalization" && i.value === issue.value;
           }));
-          rows.push({ start: issue.start, el: row });
+          rows.push({ rank: SECTION_RANK.capitalization, start: issue.start, el: row });
         } else if (issue.kind === "punctuation") {
           var prow = document.createElement("div");
           prow.className = "mcphee-panel-item mcphee-panel-note";
@@ -1011,7 +1020,7 @@ var McPhee = (function () {
           prow.appendChild(selectButton(function (i) {
             return i.kind === "punctuation";
           }));
-          rows.push({ start: issue.start, el: prow });
+          rows.push({ rank: SECTION_RANK.punctuation, start: issue.start, el: prow });
         }
       });
 
@@ -1037,10 +1046,10 @@ var McPhee = (function () {
         srow.appendChild(selectButton(function (i) {
           return i.kind === "doublespace";
         }));
-        rows.push({ start: firstDoubleSpaceStart, el: srow });
+        rows.push({ rank: SECTION_RANK.doublespace, start: firstDoubleSpaceStart, el: srow });
       }
 
-      rows.sort(function (a, b) { return a.start - b.start; });
+      rows.sort(function (a, b) { return a.rank - b.rank || a.start - b.start; });
       rows.forEach(function (r) { container.appendChild(r.el); });
 
       var dictLine = document.createElement("div");

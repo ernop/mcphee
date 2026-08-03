@@ -1,5 +1,12 @@
 # McPhee changelog (SpellWell through v1.5.0)
 
+## 3.0.3 — 2026-08-02
+
+- Panel ordering refined per author feedback on 3.0.2: sections by issue
+  type — misspelled (red), unknown (blue), repetition, capitalization,
+  punctuation, extra spaces — with document order (first occurrence) within
+  each section.
+
 ## 3.0.2 — 2026-08-02
 
 - Panel rows are sorted by text position (first occurrence), all kinds
