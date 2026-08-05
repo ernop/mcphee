@@ -220,6 +220,36 @@ Linked from [AGENTS.md](../AGENTS.md).
   config, not a library change — exclusion zones were built for exactly
   this kind of non-prose span.)
 
+## 2026-08-05 — README gets a screenshot
+
+- Creator directed that their latest screenshot be included in README.md
+  "for explaining what this thing is all about." The image (a text box with
+  block highlights and the corrections panel beside it) now sits between
+  the intro and "What it does" as `docs/screenshot.png`. (Agent's note: the
+  alt text was written by the agent and shown to the creator with the
+  change for approval, per the public-text rule.)
+
+## 2026-08-05 — Creator rewrote the README intro
+
+- The creator rewrote the README's opening directly: the product is now
+  introduced as "A personal and customizable spellchecker", "inspired by an
+  author's personal tools to improve his writing", with the spellchecking
+  comparison now against "the default ff, windows, etc. checkers." No
+  reasons stated. This supersedes the 2026-08-02 positioning directive that
+  kept the Google/Apple challenge in the description.
+
+## 2026-08-05 — Internal project name
+
+- Creator: "rename the project internally to McPhee-personal-spellchecker."
+  No reason stated. The user-facing product name in README.md remains
+  "McPhee". (Agent's scoping, not the creator's: the rename covers the
+  package name — lowercased to `mcphee-personal-spellchecker` because npm
+  requires lowercase — and the project-index doc; it deliberately does not
+  touch the `McPhee` global, the `mcphee-` CSS prefix, or the `mcphee_*`
+  storage keys, since renaming storage keys would orphan the creator's
+  personal dictionary and settings, and those identifiers are API surface
+  rather than the project's name.)
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

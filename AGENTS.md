@@ -11,6 +11,12 @@ stuff: detection of repeated obscure words, detection of mistaken nearby word
 reuse, and better spellchecking than the pitiful checkers Google and Apple
 ship. Product description for users is in [README.md](README.md).
 
+The project's internal name is **McPhee-personal-spellchecker** (package name
+`mcphee-personal-spellchecker`, lowercased per npm rules). The user-facing
+product name stays "McPhee". The internal rename does not touch the `McPhee`
+global, the `mcphee-` CSS prefix, or `mcphee_*` storage keys — those are API
+surface and persisted user data, not the project's name.
+
 ## The Creator, and the Partnership
 
 The developer of this repo is its **creator** — refer to them as "creator" or

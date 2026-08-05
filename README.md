@@ -1,20 +1,20 @@
 # McPhee
 
-A personal, customizable, minimal spellchecker — and some other fun stuff:
-it finds repeated obscure words, catches mistaken reuse of the same word
-close together, and does better spellchecking than the pitiful checkers
-Google and Apple ship. They're great companies; we're trying to do
-something cool they don't do.
+A personal and customizable spellchecker — and some other fun stuff:
 
-It works on any plain text box on the web. No account, no server, no build
-step, nothing phoning home. Free.
+inspired by an author's personal tools to improve his writing, it also:
+
+- finds repeated obscure words within a text 
+- catches mistaken reuse of the same word close together,
+- does better spellchecking than the default ff, windows, etc. checkers.
+
+![A text box with McPhee's block highlights — pink on a misspelling, blue on
+lowercased proper nouns — and the corrections panel below it, listing
+one-click fixes, add-to-dictionary and ignore buttons, and repeated-word
+notices with the distance between uses](docs/screenshot.png)
 
 ## What it does
 
-- **Spellchecking with calm block highlights** instead of red squiggles:
-  pink for real misspellings, blue for things shaped like names or code
-  that just aren't in the dictionary. It will never "correct" a lowercased
-  proper noun into some unrelated word.
 - **A corrections panel** beside your text: suggestions you click once to
   fix everywhere, an add-to-dictionary button, and an ignore button (with
   a brief undo, and a list to un-ignore later). Hovering an item highlights
