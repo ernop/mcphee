@@ -1,5 +1,24 @@
 # McPhee changelog
 
+## 3.9.0 — 2026-08-09
+
+Echo detection now covers complete repeated phrases, not only individual
+content words.
+
+- Any exact sequence of two or more dictionary-known words repeated within
+  `echoWindowWords` is found automatically; there is no curated phrase list.
+  Function-word phrases such as "at all" therefore participate even though
+  their individual words remain exempt from single-word echo.
+- Matching is case/apostrophe-insensitive and bounded by punctuation,
+  exclusion zones, misspellings, and other active issues. Competing nested
+  matches collapse to the phrase that explains the most repeated text, so a
+  repeated four-word phrase produces one row rather than overlapping bigram,
+  trigram, and four-word rows.
+- Every full occurrence receives the existing lavender echo mark and one
+  grouped panel row; hover highlights all phrase spans together. Dismissal is
+  session-scoped to the exact phrase and also suppresses the weaker
+  component-word echoes it replaced.
+
 ## 3.8.2 — 2026-08-03
 
 - Fixes invisible highlights introduced in 3.7.0: the geometry reset on

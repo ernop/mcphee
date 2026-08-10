@@ -27,7 +27,7 @@ there.
 | `mcphee-mark-doublespace` | an illegitimate extra-space run | ONE joined yellow rectangle, grey outline, no internal divisions. Never flagged: exactly two spaces after sentence-ending punctuation (deliberate sentence separator) and line-leading indentation (Markdown code blocks) |
 | `mcphee-mark-capitalization` | lowercase sentence-start dictionary word (strict profile) | light orange block |
 | `mcphee-mark-punctuation` | text ends without terminal punctuation (strict profile) | orange-outlined box on the last character |
-| `mcphee-mark-echo` | the same content word reused within 50 words (both occurrences) | light lavender block |
+| `mcphee-mark-echo` | the same content word or exact multi-word phrase reused within 50 words (every occurrence) | light lavender block |
 | `mcphee-mark-obscure` | a rare word (outside the top 10,000 by frequency) used 2+ times in the text | light green block |
 | `mcphee-mark-culture` | a proper name written lowercase ("japanese", "usa", "jupiter") | gentle teal block |
 
@@ -43,7 +43,7 @@ there.
 const sw = await McPhee.create({
   affUrl: "mcphee/vendor/typo/en_US.aff",
   dicUrl: "mcphee/vendor/typo/en_US.dic",
-  freqUrl: "mcphee/vendor/wordfreq/en-30k.txt", // optional; repetition detectors
+  freqUrl: "mcphee/vendor/wordfreq/en-30k.txt", // optional; word-frequency rules
   extraWords: ["recraft", "grok"],          // project jargon, never flagged
   customDictStorageKey: "myapp_mcphee",     // per-user dictionary (localStorage)
   profile: "standard",                      // default rule profile
@@ -155,7 +155,9 @@ sw.importWords(oldWordArray);  // union-merge (migration / future remote sync)
 // Repetition detectors (issue kinds "echo" and "obscure"):
 sw.analyze("The leopard slept. Later the leopard woke.");
 // -> two {kind:"echo", norm:"leopard", distance:4} issues (both occurrences)
-sw.ignoreRepeat("leopard");    // session-scoped "this repetition is deliberate"
+sw.analyze("It matters at all here, if it matters at all anywhere.");
+// -> two {kind:"echo", norm:"at all", phraseWords:2, ...} issues
+sw.ignoreRepeat("at all");     // session-scoped "this repetition is deliberate"
 
 // Concordance primitives for deep-look UIs:
 sw.concordance(text, "but");   // every occurrence + word-gaps between them
@@ -200,11 +202,21 @@ treats it as not being there:
   sentence start (after `.` `!` `?` `…` + whitespace, or text start).
 - **terminalPunctuation** (orange outline) — the text's last
   non-whitespace character is not sentence-ending punctuation or a closer.
-- **echo** (lavender) — the same content word (case-insensitive,
-  possessive-stripped, plural-folded) reappears within `echoWindowWords`
-  words (default 50). Exempt: words under 4 letters, stopwords, words
-  ranked more common than `echoCommonRank` (default 2000), dictionary and
-  extra words, session dismissals.
+- **echo** (lavender) — either:
+  - the same content word (case-insensitive, possessive-stripped,
+    plural-folded) reappears within `echoWindowWords` words (default 50).
+    Exempt: words under 4 letters, stopwords, words ranked more common than
+    `echoCommonRank` (default 2000), dictionary and extra words, session
+    dismissals; or
+  - any exact sequence of 2+ dictionary-known words reappears within that
+    window. Phrase matching is case/apostrophe-insensitive, includes
+    function words, and uses no curated phrase list or frequency gate.
+    Punctuation, exclusions, misspellings, and other active issues bound a
+    phrase. Nested matches collapse to the candidate that explains the most
+    repeated text; all full occurrences carry `phraseWords` and are marked.
+    A custom/extra word exempts a phrase containing it, and
+    `ignoreRepeat(phrase)` dismisses that exact normalized phrase for the
+    session.
 - **obscureRepeat** (green) — a word rarer than `obscureRank` (default
   10000) or absent from the frequency list, used 2+ times anywhere. Same
   exemptions; inert without `freqUrl`.

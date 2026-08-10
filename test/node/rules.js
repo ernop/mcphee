@@ -69,10 +69,13 @@ async function main() {
   H.ok(!checker.analyze("usa is big.").some(i => i.kind === "culture"), "+dict word exempt from culture");
   checker.removeCustomWord("usa");
 
-  // --- contractions are stopwords: never repetition candidates ---
-  H.ok(!checker.analyze("We won't stay here and we won't go there.").some(
-    i => i.kind === "obscure" || i.kind === "echo"),
-    "repeated contraction never flagged as rare or echo");
+  // --- contractions are stopwords for single-word repetition only ---
+  const contractions = checker.analyze("We won't stay here and we won't go there.");
+  H.ok(!contractions.some(i => i.kind === "obscure"
+      || (i.kind === "echo" && !i.phraseWords)),
+    "repeated contraction is never singled out as rare or echo");
+  H.eq(contractions.filter(i => i.kind === "echo" && i.norm === "we won't").length, 2,
+    "contraction still participates in an exact repeated phrase");
 
   // --- not-rare list: permanent exemption from the repetition detectors ---
   const rep = "The obstreperous crowd roared for hours. Some filler prose sits between the two uses here. An obstreperous mood returned.";

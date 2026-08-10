@@ -86,7 +86,7 @@ blocking issues exist. Two policies worth naming:
 - `watch: true` is the "insists" mode — the submit button stays disabled
   while blocking issues exist, instead of rejecting at submit time.
 
-## Repetition detectors (built: `echo` + `obscureRepeat` rules, v1.4.0)
+## Repetition detectors (`echo` + `obscureRepeat`; phrase echo added v3.9.0)
 
 Inspired by John McPhee's use of Kedit's `All` command (*Draft No. 4*,
 "Structure"): show every occurrence of a chosen word with the distances
@@ -95,22 +95,35 @@ respace ordinary words that bunch. (Originally misattributed here to Peter
 Matthiessen, whose "you often do plagiarize yourself" is real but manual.)
 Design decisions:
 
+- **General phrase discovery, not a phrase list**: `echo` compares every pair
+  of dictionary-known word starts within `echoWindowWords` and extends each
+  pair to its maximal identical multi-word sequence. Matching is
+  case/apostrophe-insensitive but otherwise exact; function words participate,
+  so two nearby uses of "at all" are found without naming that phrase in
+  advance. Punctuation, exclusion zones, misspellings, and active non-repeat
+  issues bound phrases. Competing nested matches are ranked by how much
+  repeated text they explain, yielding one useful full-span row rather than
+  rows for every contained bigram and trigram. Phrase echoes supersede weaker
+  single-word echoes over the same spans.
 - **Frequency data over word lists**: a single vendored rank list
   (`vendor/wordfreq/en-30k.txt`, Norvig's Google-corpus counts) powers both
-  detectors and their exemptions. Rank thresholds, not booleans, so
-  sensitivity is a dial: `echoCommonRank` (2000) keeps everyday words out of
-  echo; `obscureRank` (10000) defines "obscure". The web corpus skews odd in
-  places (it ranks "deliberate" as rare), which errs toward flagging — the
-  right direction for a style aid with a one-click dismiss.
+  word-level detectors and their exemptions. Rank thresholds, not booleans,
+  so sensitivity is a dial: `echoCommonRank` (2000) keeps everyday individual
+  words out of echo; `obscureRank` (10000) defines "obscure". Phrase discovery
+  does not use frequency gates because the repeated sequence itself is the
+  signal. The web corpus skews odd in places (it ranks "deliberate" as rare),
+  which errs toward flagging — the right direction for a style aid with a
+  one-click dismiss.
 - **No autofix, ever**: unlike spelling, repetition has no mechanical
   correction — choosing the replacement word is exactly the author's job. The
   tooling's whole duty is *locating* the echo (marks + hover-to-scroll) and
   getting out of the way (dismiss).
 - **Two exemption tiers**: personal-dictionary/extraWords words are
   permanently exempt (topic vocabulary must be allowed to repeat — an article
-  about leopards says "leopard" fifty times), while `ignoreRepeat(word)` is
+  about leopards says "leopard" fifty times), while `ignoreRepeat(value)` is
   session-only (deliberate anaphora in one article says nothing about the
-  next).
+  next). For a phrase, the dismissal key is its exact normalized token
+  sequence and suppresses the weaker component-word echoes it superseded.
 - Plural/possessive folding is naive (strip `'s`, strip one trailing `s` from
   5+-letter non-`ss` words) — good enough for detection; real stemming would
   add false pairs.

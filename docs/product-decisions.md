@@ -250,6 +250,17 @@ Linked from [AGENTS.md](../AGENTS.md).
   personal dictionary and settings, and those identifiers are API surface
   rather than the project's name.)
 
+## 2026-08-09 — Mini-phrase repetition must not be curated-only
+
+- Repeated nearby mini-phrases or grammatical patterns, such as two uses of
+  "at all", should be detected. The creator rejected limiting this detection
+  to a curated phrase list: "that doesn't seem broad or safe enough." The
+  design therefore needs general detection rather than coverage determined
+  only by phrases selected in advance.
+- The creator then directed: "let's just do full phrasal repetition
+  detection." Implemented as general exact multi-word sequence discovery
+  under the existing nearby-echo rule, with no curated allowlist.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

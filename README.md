@@ -5,7 +5,7 @@ A personal and customizable spellchecker — and some other fun stuff:
 inspired by an author's personal tools to improve his writing, it also:
 
 - finds repeated obscure words within a text 
-- catches mistaken reuse of the same word close together,
+- catches mistaken reuse of the same word or phrase close together,
 - does better spellchecking than the default ff, windows, etc. checkers.
 
 ![A text box with McPhee's block highlights — pink on a misspelling, blue on
@@ -18,16 +18,16 @@ notices with the distance between uses](docs/screenshot.png)
 - **A corrections panel** beside your text: suggestions you click once to
   fix everywhere, an add-to-dictionary button, and an ignore button (with
   a brief undo, and a list to un-ignore later). Hovering an item highlights
-  every matching word in your text — for a repeated word, both uses at
-  once; clicking one selects it. Fixes never destroy
+  every matching word or phrase in your text — for a repetition, both uses
+  at once; clicking one selects it. Fixes never destroy
   your undo history — Ctrl+Z always works.
 - **Repetition detection**, inspired by John McPhee, who ran Kedit's `All`
   command over every piece to see each use of a chosen word and the
   distances between occurrences (*Draft No. 4*, "Structure"):
   - a distinctive, obscure word used more than once in a piece — once is
     usually enough;
-  - the same ordinary word reused within a few lines — the accidental echo
-    you stop seeing while editing.
+  - mistaken reuse of the same word or phrase close together — the
+    accidental echo you stop seeing while editing.
   Repetition is never auto-fixed: choosing the replacement word is the
   author's job. The tool's job is finding the echo.
 - **A concordance view**: every occurrence of any word with the gaps

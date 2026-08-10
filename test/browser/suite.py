@@ -159,6 +159,22 @@ def main():
         ok(all(a <= b for a, b in zip(order, order[1:])),
            f"panel rows grouped by section, never interleaved (ranks {order})")
 
+        # --- phrase echo uses full, correctly aligned spans ---
+        set_text_and_settle(page, "I do not care at all whether this works at all today.")
+        phrase_row = page.locator(".mcphee-panel-word-echo", has_text="at all").first
+        ok(phrase_row.count() == 1, "repeated phrase gets one panel row")
+        phrase_marks = page.evaluate("""() =>
+            [...document.querySelectorAll(".mcphee-mark-echo")]
+                .map(m => m.textContent)
+                .filter(t => t === "at all")
+        """)
+        ok(len(phrase_marks) == 2, "both full phrase spans are marked")
+        phrase_row.locator("..").locator("..").hover()
+        page.wait_for_timeout(150)
+        ok(page.evaluate("document.querySelectorAll('.mcphee-mark-hover').length") == 2,
+           "hovering a phrase row highlights both full phrases")
+        page.mouse.move(0, 0)
+
         # --- host-page mark styling must not perturb wrap parity ---
         # (Bootstrap's reboot pads `mark`; with hundreds of marks the drift
         # once compounded into extra wraps and the overlay fail-closed.)
