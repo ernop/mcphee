@@ -1,6 +1,6 @@
 {
   "name": "mcphee-personal-spellchecker",
-  "version": "3.9.0",
+  "version": "3.9.1",
   "description": "A personal, customizable, minimal spellchecker — and some other fun stuff: it finds repeated obscure words, catches mistaken reuse of the same word or phrase close together, and does better spellchecking than the pitiful checkers Google and Apple ship.",
   "main": "mcphee.js",
   "scripts": {

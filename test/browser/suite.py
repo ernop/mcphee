@@ -1,10 +1,15 @@
 """Real-browser suite (Playwright + demo.html): the things the Node tests
-cannot see — overlay visibility, wrap-parity integrity, hover highlighting,
-panel section order, and suggestion acceptance.
+cannot see — overlay visibility, wrap-parity integrity, wrap points at
+fractional widths, hover highlighting, panel section order, and suggestion
+acceptance.
 
-Geometry is never asserted with pixel math. The library's own integrity
-self-check is the oracle: if the overlay stays visible, content and wrap
-parity held; if it hides itself or warns, the test fails.
+Geometry is never asserted with pixel math on marks. The library's own
+integrity self-check is the primary oracle: if the overlay stays visible,
+content and wrap parity held; if it hides itself or warns, the test fails.
+One exception, because the self-check is provably blind to it: wrap-point
+divergence that keeps the line count unchanged. That is asserted by
+comparing which characters land on which line against a reference mirror
+sized at the textarea's exact fractional width (see WRAP_POINT_JS).
 
 Run: python test/browser/suite.py
 Requires: pip install playwright && playwright install chromium
@@ -37,6 +42,139 @@ def serve():
     httpd = http.server.ThreadingHTTPServer(("127.0.0.1", PORT), handler)
     threading.Thread(target=httpd.serve_forever, daemon=True).start()
     return httpd
+
+
+# Compares the backdrop's wrap points (which characters land on which line)
+# against a reference mirror sized at the textarea's exact fractional width.
+# The reference carries no marks, so it also verifies that mark elements do
+# not perturb line breaking. Also builds a second mirror sized the way the
+# overlay was sized before v3.9.1 (integer clientWidth): its diff count shows
+# whether the current width would have diverged under the old sizing.
+WRAP_POINT_JS = """() => {
+    const ta = document.querySelector('.mcphee-textarea');
+    const backdrop = document.querySelector('.mcphee-backdrop');
+    const cs = getComputedStyle(ta);
+
+    function lineTexts(el) {
+        const lines = []; let curY = null, cur = '';
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+            const s = node.nodeValue;
+            for (let i = 0; i < s.length; i++) {
+                const r = document.createRange();
+                r.setStart(node, i); r.setEnd(node, i + 1);
+                const y = Math.round(r.getBoundingClientRect().top);
+                if (curY === null) curY = y;
+                if (Math.abs(y - curY) > 2) { lines.push(cur); cur = ''; curY = y; }
+                cur += s[i];
+            }
+        }
+        if (cur) lines.push(cur);
+        return lines;
+    }
+
+    function makeMirror(widthPx) {
+        const d = document.createElement('div');
+        for (const p of ['fontFamily','fontSize','fontWeight','fontStyle',
+            'letterSpacing','lineHeight','textTransform','wordSpacing','textIndent',
+            'whiteSpace','overflowWrap','wordBreak','tabSize','direction',
+            'paddingTop','paddingRight','paddingBottom','paddingLeft',
+            'borderTopWidth','borderRightWidth','borderBottomWidth',
+            'borderLeftWidth']) d.style[p] = cs[p];
+        d.style.whiteSpace = 'pre-wrap';
+        d.style.overflowWrap = 'break-word';
+        d.style.boxSizing = 'border-box';
+        d.style.borderStyle = 'solid';
+        d.style.borderColor = 'transparent';
+        d.style.position = 'absolute';
+        d.style.visibility = 'hidden';
+        d.style.width = widthPx + 'px';
+        d.textContent = ta.value + '\\n';
+        document.body.appendChild(d);
+        return d;
+    }
+
+    const bl = parseFloat(cs.borderLeftWidth) || 0;
+    const br = parseFloat(cs.borderRightWidth) || 0;
+    const ref = makeMirror(ta.getBoundingClientRect().width);
+    const rounded = makeMirror(ta.clientWidth + bl + br);
+    const refLines = lineTexts(ref);
+    const roundedLines = lineTexts(rounded);
+    const bdLines = lineTexts(backdrop);
+    ref.remove();
+    rounded.remove();
+
+    function diffLines(a, b) {
+        const out = [];
+        for (let i = 0; i < Math.max(a.length, b.length); i++) {
+            if (a[i] !== b[i]) out.push(i);
+        }
+        return out;
+    }
+    const diffs = diffLines(refLines, bdLines);
+    return {
+        diffCount: diffs.length,
+        roundedDiffCount: diffLines(refLines, roundedLines).length,
+        firstDiff: diffs.length ? {
+            line: diffs[0],
+            reference: refLines[diffs[0]],
+            backdrop: bdLines[diffs[0]],
+        } : null,
+    };
+}"""
+
+# Chooses a host width that plants a word boundary INSIDE the clientWidth
+# rounding gap: the first line's word prefix is measured at full precision,
+# then the width is set so the prefix fits the true fractional client width
+# but not the integer-rounded one. Deterministic by construction — no
+# scanning for an unlucky width, no font assumptions.
+AIM_JS = """() => {
+    const ta = document.querySelector('.mcphee-textarea');
+    const cs = getComputedStyle(ta);
+    // The probe is styled with the same property list the mirror uses, so
+    // its measured width is the width the mirror will lay the text out at —
+    // sub-pixel identical, no shorthand approximations.
+    const probe = document.createElement('div');
+    for (const p of ['fontFamily','fontSize','fontWeight','fontStyle',
+        'letterSpacing','lineHeight','textTransform','wordSpacing','textIndent',
+        'wordBreak','tabSize','direction']) probe.style[p] = cs[p];
+    probe.style.whiteSpace = 'pre';
+    probe.style.position = 'absolute';
+    probe.style.visibility = 'hidden';
+    document.body.appendChild(probe);
+
+    const padL = parseFloat(cs.paddingLeft) || 0;
+    const padR = parseFloat(cs.paddingRight) || 0;
+    const bl = parseFloat(cs.borderLeftWidth) || 0;
+    const br = parseFloat(cs.borderRightWidth) || 0;
+
+    // Walk successive word prefixes (starting near a 450px line) until one
+    // measures a client width whose fraction sits inside (0.03, 0.27). For
+    // that prefix, client = floor + 0.3 means: the exact fractional content
+    // width fits the prefix, while the integer-rounded clientWidth does not
+    // — the wrap point sits inside the rounding gap by construction.
+    // Returned as the CSS width to set on the TEXTAREA itself, converted
+    // for its box-sizing (the demo textarea is content-box).
+    const words = ta.value.split(' ');
+    let prefix = words[0];
+    for (let i = 1; i < words.length; i++) {
+        prefix += ' ' + words[i];
+        probe.textContent = prefix;
+        const P = probe.getBoundingClientRect().width;
+        if (P < 450) continue;
+        const f = (P + padL + padR) % 1;
+        if (f > 0.03 && f < 0.27) {
+            probe.remove();
+            const client = Math.floor(P + padL + padR) + 0.3;
+            return cs.boxSizing === 'border-box'
+                ? client + bl + br
+                : client - padL - padR;
+        }
+    }
+    probe.remove();
+    return null;
+}"""
 
 
 def overlay_state(page):
@@ -192,6 +330,106 @@ def main():
             st = overlay_state(page)
             ok(st["visibility"] == "visible" and not any("integrity" in w for w in warnings),
                f"integrity holds: {name}")
+
+        # --- wrap-point parity at fractional widths ---
+        # The integrity self-check compares scrollHeights, which is blind to
+        # a divergence that moves one word to the next line without changing
+        # the line count (the v3.9.1 sub-pixel width bug did exactly this:
+        # the backdrop was sized from integer-rounded clientWidth while the
+        # textarea wrapped at its true fractional width, and every mark
+        # below the flipped wrap point displayed shifted by one word). So
+        # wrap points are checked directly: which words land on which line,
+        # backdrop vs a reference mirror sized at the textarea's exact
+        # fractional width.
+        prose = ("the quick brown fox jumps over the lazy dog while teh "
+                 "narrator keeps describing scenery, weather, altitude and "
+                 "vegetation in long meandering sentences that wrap across "
+                 "many lines. every additional clause nudges the wrap points "
+                 "around, and a word boundary occasionally lands within a "
+                 "fraction of a pixel of the edge, which is exactly the "
+                 "situation this matrix exists to exercise. wierd spellings "
+                 "and repeated repeated words give the overlay marks to "
+                 "render, since marks themselves must never perturb where "
+                 "any line breaks.")
+        # A proportional font is required here: the demo's monospace has
+        # integer character advances, so line widths never carry a fraction
+        # and the rounding gap contains no word boundary to catch. (This is
+        # also why the bug never surfaced in the demo — it was found in a
+        # host app with a 22px proportional font.) The font swap is picked
+        # up by the overlay's self-repair on the next render.
+        page.add_style_tag(content=
+            ".mcphee-textarea { font: 22px/1.4 system-ui, sans-serif !important; }")
+        warnings.clear()
+        set_text_and_settle(page, prose)
+        for tenth in (1, 3, 5, 7, 9):
+            page.add_style_tag(
+                content=f".mcphee-host {{ width: {697 + tenth / 10}px !important; }}")
+            page.wait_for_timeout(300)  # ResizeObserver -> syncGeometry
+            res = page.evaluate(WRAP_POINT_JS)
+            st = overlay_state(page)
+            ok(st["visibility"] == "visible" and res["diffCount"] == 0
+               and not any("integrity" in w for w in warnings),
+               f"wrap points match the textarea's exact width at 697.{tenth}px "
+               f"(diverging lines: {res['diffCount']}, first: {res['firstDiff']})")
+        # The aimed case: a word boundary planted inside the rounding gap.
+        aimed = page.evaluate(AIM_JS)
+        ok(aimed is not None, "found a word prefix with a usable width fraction")
+        page.add_style_tag(
+            content=f".mcphee-textarea {{ width: {aimed}px !important; }}")
+        page.wait_for_timeout(300)
+        res = page.evaluate(WRAP_POINT_JS)
+        ok(res["roundedDiffCount"] > 0,
+           f"canary at {aimed:.3f}px: integer-rounded sizing diverges here, "
+           f"so this case has teeth ({res['roundedDiffCount']} lines)")
+        ok(res["diffCount"] == 0,
+           f"wrap points survive a word boundary inside the clientWidth "
+           f"rounding gap (diverging lines: {res['diffCount']}, "
+           f"first: {res['firstDiff']})")
+        page.add_style_tag(content=".mcphee-host { width: 100% !important; }")
+        page.add_style_tag(content=
+            ".mcphee-textarea { width: 100% !important;"
+            " font: 15px/1.5 monospace !important; }")
+
+        # --- a render that throws fails closed, then recovers ---
+        # The state audit found lastRendered was assigned before the render:
+        # an analyzer exception left stale marks visible AND believed-current,
+        # so even the poll never repaired them. Now a render that does not
+        # complete is an integrity failure: the overlay hides, and the poll
+        # retries until a full render verifies again.
+        crash = page.evaluate("""async () => {
+            const m = await McPhee.create({
+                affUrl: "vendor/typo/en_US.aff",
+                dicUrl: "vendor/typo/en_US.dic",
+                freqUrl: "vendor/wordfreq/en-30k.txt",
+            });
+            const ta = document.createElement("textarea");
+            document.body.appendChild(ta);
+            ta.value = "first teh text";
+            const ctl = m.attach(ta);
+            const backdrop = ta.closest(".mcphee-host").querySelector(".mcphee-backdrop");
+            const visibleBefore = getComputedStyle(backdrop).visibility;
+            const marksBefore = backdrop.querySelectorAll("mark").length;
+            m.renderHtml = () => { throw new Error("injected analyzer crash"); };
+            ta.value = "second wierd text";
+            ta.dispatchEvent(new Event("input", { bubbles: true }));
+            const visibleDuring = getComputedStyle(backdrop).visibility;
+            delete m.renderHtml;
+            await new Promise(r => setTimeout(r, 1600));  // > one 700ms poll
+            const visibleAfter = getComputedStyle(backdrop).visibility;
+            const parityAfter = backdrop.textContent === ta.value + "\\n";
+            ctl.detach();
+            ta.remove();
+            return { visibleBefore, marksBefore, visibleDuring, visibleAfter, parityAfter };
+        }""")
+        ok(crash["visibleBefore"] == "visible" and crash["marksBefore"] > 0,
+           "crash test baseline: overlay visible with marks")
+        ok(crash["visibleDuring"] == "hidden",
+           f"a throwing render hides the overlay instead of showing stale marks "
+           f"({crash['visibleDuring']})")
+        ok(crash["visibleAfter"] == "visible" and crash["parityAfter"],
+           f"the poll re-renders and re-verifies once the analyzer heals "
+           f"(visibility {crash['visibleAfter']}, parity {crash['parityAfter']})")
+        warnings.clear()  # the injected crash legitimately warned once
 
         # --- accepting a suggestion keeps the overlay honest ---
         set_text_and_settle(page, "The dog sat. teh cat ran fast here.")

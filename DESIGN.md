@@ -202,14 +202,33 @@ After every render these must hold, or the marks are lies:
 1. **Content parity** — `backdrop.textContent === textarea.value + "\n"`
    (the trailing newline is the scroll-parity line). Guarantees every mark
    sits on exactly the characters the analysis measured.
-2. **Wrap parity** — `|backdrop.scrollHeight − textarea.scrollHeight| ≤ 2`.
+2. **Wrap parity** — both boxes' TRUE content heights are equal (±2px).
    Same text + same metrics + same width ⇒ same wrap points ⇒ same height;
    a height difference is direct evidence the layouts diverged (fonts,
-   zoom, box-sizing, site CSS, anything).
+   zoom, box-sizing, site CSS, anything). Content height is measured by
+   momentarily setting `height: 0` and reading `scrollHeight` (both writes
+   in one layout pass, no paint in between). Raw scrollHeights were
+   compared through v3.9.0, and that check was VACUOUS whenever the text
+   fit inside the visible box: scrollHeight clamps to the element's own
+   height, so short text in a tall textarea — the most common state —
+   would accept any wrap divergence, even a completely wrong font.
+
+   Known blind spot: wrap parity observes the *total content height*, not
+   the wrap points themselves. A divergence that moves one word to the
+   next line without changing the line count (v3.9.1's sub-pixel width bug
+   did exactly this) passes both invariants while every mark below the
+   divergence displays shifted by one word. A textarea exposes no per-line
+   layout to compare against, so this class cannot be detected at render
+   time — it must be *prevented* by construction, and the browser suite
+   checks wrap points explicitly against an exact-width reference mirror.
 
 ### The enforcement ladder
 
-1. Every render verifies both invariants.
+1. Every render verifies both invariants — and a render that throws is
+   itself an integrity violation (the marks on screen no longer describe
+   the buffer), handled exactly like a failed check. The invariants are
+   always verified against the textarea's live value, never against a
+   variable recording what the overlay believes it rendered.
 2. First violation: automatic self-repair — re-mirror all wrap-affecting
    computed styles, re-render, re-verify (handles late-loading fonts, theme
    flips, zoom).
@@ -223,6 +242,7 @@ After every render these must hold, or the marks are lies:
 | cause | defense |
 | --- | --- |
 | box-sizing mismatch (content-box textareas) | backdrop forced to border-box, sized from the textarea's client box (v3.0.1) |
+| integer rounding of `clientWidth` vs the textarea's fractional layout width | client size measured at full precision from the client rect; `clientWidth` contributes only the integer part (v3.9.1) |
 | vertical scrollbar shrinking wrap width | width taken from client box, not offset box |
 | late-loading fonts / theme switch / zoom | styles re-mirrored on every forced refresh + on re-enable (v3.2.0); invariant check catches the rest |
 | site CSS restyling textareas | `white-space`, `overflow-wrap`, `word-break`, `tab-size`, `direction` mirrored explicitly (v3.2.0) |

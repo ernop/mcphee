@@ -79,11 +79,15 @@ Technical:
     zones, and caret mapping written in caret notation ("|" marks the caret,
     so every expectation is a picture of the textarea, never offset
     arithmetic). Run: `npm test`.
-  - `test/browser/suite.py` — Playwright suite for what Node cannot see:
-    overlay visibility, wrap-parity integrity across a content matrix,
-    hover highlighting, panel section order, and suggestion acceptance. The
-    library's own integrity self-check is the oracle — the tests never do
-    pixel math. Run: `python test/browser/suite.py`.
+ - `test/browser/suite.py` — Playwright suite for what Node cannot see:
+ overlay visibility, wrap-parity integrity across a content matrix,
+ wrap points at fractional widths, hover highlighting, panel section
+ order, and suggestion acceptance. The library's own integrity
+ self-check is the primary oracle — the tests never do pixel math on
+ marks. The one exception is wrap-point parity, which the self-check
+ is provably blind to when the line count is unchanged; it is compared
+ against an exact-width reference mirror instead.
+ Run: `python test/browser/suite.py`.
 
   Both must pass before a release.
 

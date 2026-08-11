@@ -1,6 +1,42 @@
 # McPhee changelog
 
-## 3.9.0 — 2026-08-09
+## 3.9.1 — 2026-08-11
+
+Three overlay-correctness fixes, found while diagnosing visibly misplaced
+highlights that appeared during typing (observed in Firefox in a host app).
+
+- The backdrop was sized from `clientWidth`, which is integer-rounded,
+  while the textarea wraps its text against its true fractional width. The
+  up-to-half-pixel difference could wrap a line one word differently than
+  the textarea; when the flipped wrap point kept the total line count
+  unchanged, wrap parity could not detect it, and every mark below the
+  divergence displayed shifted by one word. The backdrop is now sized at
+  full precision: the fractional part of the client width is recovered
+  from the client rect and combined with `clientWidth`'s integer part
+  (including the exact half-pixel tie, where browsers round up).
+- The wrap-parity invariant compared raw scrollHeights, which clamp to the
+  element's own box — so while the text fit inside the visible textarea
+  (the most common state), the check was vacuous and would have accepted
+  any wrap divergence, even a wrong font after a late style change. Both
+  content heights are now measured for real (momentary `height: 0`, one
+  layout pass, no paint), so wrap parity holds meaning at every text
+  length.
+- A state audit (prompted by the creator asking whether the recorded state
+  of play could drift from the buffer's real contents) found that
+  `lastRendered` was assigned before the render: an analyzer exception
+  mid-keystroke would leave stale marks visible AND believed-current, so
+  even the background poll never repaired them. A render that does not
+  complete is now an integrity failure like any other — the overlay hides
+  and the poll retries until a full render verifies. The integrity check
+  also now compares the display against the textarea's live value, never
+  against the variable recording what we think we rendered.
+- The browser suite gains a wrap-point matrix at fractional widths in a
+  proportional font, plus an aimed case that plants a word boundary inside
+  the clientWidth rounding gap by measurement (with a canary asserting the
+  old sizing diverges there, so the case cannot silently go dull). Wrap
+  points are compared against an exact-width reference mirror, since the
+  integrity self-check is blind to same-line-count divergence by
+  construction.
 
 Echo detection now covers complete repeated phrases, not only individual
 content words.
