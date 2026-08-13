@@ -389,6 +389,12 @@ Linked from [AGENTS.md](../AGENTS.md).
   add-on on GitHub is illustrated by that image (`docs/browser.png`),
   not the agent-captured stand-ins. Those two files are removed.
 
+## 2026-08-13 — GitHub README shows the x.com draft, not the test page
+
+- Creator, looking at https://github.com/ernop/mcphee: do not show the
+  test page. Show the recent image from their screenshots of typing a
+  draft post on x.com and seeing the suggestions.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

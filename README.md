@@ -1,9 +1,7 @@
 # McPhee
 
-![McPhee docked beside a page in the browser — block highlights on the
-text, and the suggestions panel listing spelling fixes, add-to-dictionary
-and ignore buttons, and repeated phrases with the distance between
-uses](docs/browser.png)
+![A draft post on x.com with McPhee's highlights in the text and the
+suggestions panel beside it](docs/browser.png)
 
 A personal and customizable spellchecker — and some other fun stuff:
 
@@ -12,11 +10,6 @@ inspired by an author's personal tools to improve his writing, it also:
 - finds repeated obscure words within a text 
 - catches mistaken reuse of the same word or phrase close together,
 - does better spellchecking than the default ff, windows, etc. checkers.
-
-![A text box with McPhee's block highlights — pink on a misspelling, blue on
-lowercased proper nouns — and the corrections panel below it, listing
-one-click fixes, add-to-dictionary and ignore buttons, and repeated-word
-notices with the distance between uses](docs/screenshot.png)
 
 ## What it does
 
