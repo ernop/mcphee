@@ -311,6 +311,45 @@ Linked from [AGENTS.md](../AGENTS.md).
   misspelling participates; if more than one distance-1 reading exists the
   region rewrite is refused and the single-word guess stands.
 
+## 2026-08-13 — Docked default, per-site memory, per-form +
+
+- Creator: the default method of it appearing shall be **docked**. If the
+  user changes it, remember what they left it set at for every site,
+  separately.
+- Creator, on multiple forms per page: it must be able to go to each.
+  Add a little expando **+** to open, then click again to make it small
+  on the side, for any form for which it's enabled.
+- Creator asked whether "click to allow McPhee in this form" came from
+  reason/laws, or was a choice. It was the creator's own product choice
+  in the original directive ("only if allowed by you to see/know about
+  it"). Not a legal requirement. (Firefox still has its own host-permission
+  prompt to run on a page at all; that is separate from picking a form.)
+
+## 2026-08-13 — personalide-spelling-mcphee: McPhee on forms you allow
+
+- Creator, looking at a Firefox reply composer that still offered to submit
+  despite egregious typos and with nobody warning: make a new Firefox
+  extension named **personalide-spelling-mcphee**. It lets you configure it
+  to certain form inputs on certain sites. Only if you allow it to
+  see/know about a form does it apply the regular McPhee spellcheck to
+  that form, with no other changes. It merely adds either an in-form or
+  side-of-window sidebar which shows the choices to fix, and also does
+  the traditional highlighting.
+- No further reasons stated. The motivating case is a site composer that
+  neither underlines mistakes nor refuses submit.
+- Agent: this is a separate add-on from McPhee Guard. Guard blocks
+  submit; this one checks and highlights, and does not change submit.
+  Field text is unread until that field is allowed. On a site that is
+  not a native textarea, the panel defaults to the side-of-window
+  sidebar so the host layout is not rewritten; inline docking stays
+  available where wrapping the field is safe. Highlighting on
+  contenteditable composers uses the same mark colors, placed from
+  live text ranges — the textarea mirror overlay cannot see inside
+  those editors; if a range cannot be proven to match the analyzed
+  word, highlighting hides rather than guess. Shared personal
+  dictionary with Guard in this browser. Local debug install first;
+  no store push until the creator tests it.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

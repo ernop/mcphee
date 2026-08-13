@@ -1,5 +1,15 @@
 # McPhee changelog
 
+## 3.10.1 — 2026-08-13
+
+The overlay keeps the textarea's real background and follows resizes.
+
+- Remirroring wrap styles no longer copies the textarea's *transparent*
+  background onto the backdrop (that class is what lets marks show
+  through). The spell area was going hollow after any forced refresh.
+- A size change without a text change now re-renders. Resize used to
+  skip the render path, so the highlight box stayed at the old size.
+
 ## 3.10.0 — 2026-08-13
 
 The word currently being typed is not shown as misspelled; a Control tap

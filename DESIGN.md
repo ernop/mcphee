@@ -1,8 +1,10 @@
 # McPhee cross-project design
 
 One personal spellcheck system, reused everywhere: the creator's article
-editors, prompt boxes, one-off pages, and the McPhee Guard Firefox extension
-(`extension/`) that gates submission on arbitrary sites. This document
+editors, prompt boxes, one-off pages, the McPhee Guard Firefox extension
+(`extension/`) that gates submission on arbitrary sites, and
+personalide-spelling-mcphee (`personalide-spelling-mcphee/`) which applies
+the regular checker to form inputs the creator has allowed. This document
 records the architecture decisions and the not-yet-built roadmap so each
 host copy can catch up to master with a folder copy and minor wiring.
 
@@ -168,6 +170,32 @@ Still to build: dictionary-sync endpoint integration with a `storage.sync`
 mirror, optional overlay marks for textareas, per-guard profile/blockOn
 overrides, and an AMO-signed build.
 
+## Firefox extension — personalide-spelling-mcphee (v0.2.0, `personalide-spelling-mcphee/`)
+
+A second WebExtension, separate from Guard: it does not block submit. The
+creator allows individual form inputs on individual sites; only then does
+McPhee see that field and apply the regular checker.
+
+- **Opt-in per field.** A one-click teach (popup → click the editable)
+  stores a selector for that origin. That per-form step is the creator's
+  product choice ("only if allowed by you to see/know about it"), not a
+  legal requirement. Firefox's host-permission prompt is separate: it
+  only lets the add-on run on the page at all.
+- **Docked default, remembered per site.** The suggestions panel sits
+  beside the allowed form. A **+** on that form's side expands or shrinks
+  it. Several allowed forms on one page each have their own **+**. The
+  docked-vs-drawer choice is stored per origin in extension storage
+  (`mcphee_spelling_ui`). The panel is positioned next to the field's
+  box (no flex-wrap of the host editor).
+- **Textarea overlay** uses library `attach()` (mirror). **Contenteditable**
+  uses range-rect highlights. Fail closed: if a range's text does not
+  match the analyzed span, highlighting hides; the panel still lists
+  issues (different job).
+- **Dictionary** is `storage.local` key `mcphee_dict`, shared with Guard
+  in this browser profile.
+- **Local debug first.** Temporary add-on via `about:debugging`; AMO sign
+  waits on the creator testing it.
+
 ## Overlay correctness (v3.4.0): how we never show wrong highlights
 
 Misaligned highlights were observed repeatedly during development. This
@@ -244,7 +272,8 @@ After every render these must hold, or the marks are lies:
 | box-sizing mismatch (content-box textareas) | backdrop forced to border-box, sized from the textarea's client box (v3.0.1) |
 | integer rounding of `clientWidth` vs the textarea's fractional layout width | client size measured at full precision from the client rect; `clientWidth` contributes only the integer part (v3.9.1) |
 | vertical scrollbar shrinking wrap width | width taken from client box, not offset box |
-| late-loading fonts / theme switch / zoom | styles re-mirrored on every forced refresh + on re-enable (v3.2.0); invariant check catches the rest |
+| late-loading fonts / theme switch / zoom | styles re-mirrored on every forced refresh + on re-enable (v3.2.0); invariant check catches the rest. Remirror reads the textarea background with the transparent class off, so the backdrop does not copy 'transparent' and hollow out the spell area (v3.10.1) |
+| textarea resized without a text change | refresh always re-measures geometry and re-renders when the box size changed; a text-only skip used to leave the highlight box at the old size (v3.10.1) |
 | site CSS restyling textareas | `white-space`, `overflow-wrap`, `word-break`, `tab-size`, `direction` mirrored explicitly (v3.2.0) |
 | programmatic `.value` writes with no event | 700 ms background poll re-renders on any value change |
 | stale geometry after element resize | ResizeObserver re-syncs; `refresh(true)` re-measures everything |

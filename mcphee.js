@@ -83,7 +83,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.10.0";
+  var VERSION = "3.10.1";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -1312,6 +1312,12 @@ var McPhee = (function () {
     // otherwise leave the backdrop wrapping text differently than the
     // textarea, drifting every mark.
     function mirrorStyles() {
+      // The textarea is made transparent so marks show through; reading its
+      // background while that class is on would copy 'transparent' onto the
+      // backdrop and the spell area would vanish. Drop the class for the
+      // read, then put it back.
+      var wasTransparent = textarea.classList.contains("mcphee-textarea");
+      if (wasTransparent) textarea.classList.remove("mcphee-textarea");
       MIRRORED_STYLES.forEach(function (prop) {
         backdrop.style[prop] = computed[prop];
       });
@@ -1321,12 +1327,13 @@ var McPhee = (function () {
       // ~18px wider than the textarea and drifting every mark leftward.
       backdrop.style.boxSizing = "border-box";
       backdrop.style.background = computed.backgroundColor;
+      if (wasTransparent) textarea.classList.add("mcphee-textarea");
     }
-    mirrorStyles();
 
     textarea.parentNode.insertBefore(host, textarea);
     host.appendChild(backdrop);
     host.appendChild(textarea);
+    mirrorStyles();
     textarea.classList.add("mcphee-textarea");
     // McPhee's marks replace the browser's red squiggles.
     textarea.spellcheck = false;
@@ -1422,18 +1429,21 @@ var McPhee = (function () {
       backdrop.style.visibility = enabled && !integrityFailed ? "visible" : "hidden";
     }
 
-    // refresh() re-renders when the text changed or the in-progress word
-    // (the token containing the caret) changed; refresh(true) is a full
-    // regeneration — styles re-mirrored, geometry re-synced, marks rebuilt
-    // from scratch — the recovery path for any drift.
+    // refresh() re-renders when the text, the in-progress word, or the
+    // box size changed; refresh(true) is a full regeneration — styles
+    // re-mirrored, geometry re-synced, marks rebuilt from scratch.
     function refresh(force) {
       if (!enabled) return;
       if (force === true || integrityFailed) {
         mirrorStyles();
         lastRendered = null;
       }
+      var prevW = backdrop.style.width;
+      var prevH = backdrop.style.height;
+      syncGeometry();
+      var geomChanged = backdrop.style.width !== prevW || backdrop.style.height !== prevH;
       var wordKey = caretWordKey();
-      if (textarea.value !== lastRendered || wordKey !== lastCaretWord) {
+      if (geomChanged || textarea.value !== lastRendered || wordKey !== lastCaretWord) {
         // A render that does not COMPLETE is an integrity violation like any
         // other: the marks on screen no longer describe the buffer. The only
         // path to a visible overlay is a finished render plus a passed
@@ -1480,7 +1490,6 @@ var McPhee = (function () {
     textarea.addEventListener("input", onEvent);
     textarea.addEventListener("scroll", onEvent);
     var resizeObserver = new ResizeObserver(function () {
-      syncGeometry();
       refresh();
     });
     resizeObserver.observe(textarea);

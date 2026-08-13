@@ -108,6 +108,8 @@
 .mcphee-panel {
   font-size: 13px;
   line-height: 1.5;
+  background: #fff;
+  color: #111827;
 }
 
 .mcphee-panel-header {
@@ -316,6 +318,8 @@
   top: 12px;
   max-height: calc(100vh - 24px);
   overflow-y: auto;
+  background: #fff;
+  color: #111827;
 }
 
 /* Mode-toggle chrome above the panel in either home. */

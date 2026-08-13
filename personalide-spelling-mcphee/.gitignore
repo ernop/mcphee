@@ -1,0 +1,7 @@
+# Copied in by build.sh from the repo root — not committed twice.
+mcphee.js
+mcphee.css
+vendor/
+amo-credentials.local
+*.xpi
+web-ext-artifacts/
