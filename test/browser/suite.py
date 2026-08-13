@@ -1,6 +1,7 @@
 """Real-browser suite (Playwright + demo.html): the things the Node tests
 cannot see — overlay visibility, wrap-parity integrity, wrap points at
-fractional widths, hover highlighting, panel section order, and suggestion
+fractional widths, hover highlighting, panel section order, in-progress-word
+hiding, Control-tap correction, first-suggestion alignment, and suggestion
 acceptance.
 
 Geometry is never asserted with pixel math on marks. The library's own
@@ -430,6 +431,69 @@ def main():
            f"the poll re-renders and re-verifies once the analyzer heals "
            f"(visibility {crash['visibleAfter']}, parity {crash['parityAfter']})")
         warnings.clear()  # the injected crash legitimately warned once
+
+        # --- the word being typed is not marked misspelled ---
+        set_text_and_settle(page, "teh cat ran.")
+        page.evaluate("""() => {
+            const ta = document.querySelector('.mcphee-textarea');
+            ta.focus();
+            ta.setSelectionRange(3, 3);
+        }""")
+        page.wait_for_timeout(900)
+        in_word = page.evaluate("""() => {
+            const marks = [...document.querySelectorAll('.mcphee-backdrop .mcphee-mark-misspelled')];
+            return {
+                values: marks.map(m => m.textContent),
+                panelHasTeh: [...document.querySelectorAll('.mcphee-panel-word-misspelled')]
+                    .some(w => w.textContent.replace(/\\s.*/, '') === 'teh'),
+            };
+        }""")
+        ok("teh" not in in_word["values"],
+           f"in-progress teh is not overlay-marked ({in_word['values']})")
+        ok(not in_word["panelHasTeh"], "in-progress teh is not in the panel")
+        page.evaluate("""() => {
+            const ta = document.querySelector('.mcphee-textarea');
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+        }""")
+        page.wait_for_timeout(900)
+        left_word = page.evaluate("""() =>
+            [...document.querySelectorAll('.mcphee-backdrop .mcphee-mark-misspelled')]
+                .map(m => m.textContent)
+        """)
+        ok("teh" in left_word, f"teh is marked once the caret leaves it ({left_word})")
+
+        # --- Control tap: naive-correct nearest misspelling behind the caret ---
+        set_text_and_settle(page, "The dog sat. teh cat ran.")
+        page.locator(".mcphee-textarea").focus()
+        page.keyboard.press("Control")
+        page.wait_for_timeout(500)
+        after_ctrl = page.evaluate("document.querySelector('.mcphee-textarea').value")
+        ok("teh" not in after_ctrl and "the cat" in after_ctrl,
+           f"Control tap corrected teh ({after_ctrl!r})")
+
+        set_text_and_settle(page, "i fi")
+        page.locator(".mcphee-textarea").focus()
+        page.keyboard.press("Control")
+        page.wait_for_timeout(500)
+        after_region = page.evaluate("document.querySelector('.mcphee-textarea').value")
+        ok(after_region == "if I",
+           f"Control tap rewrites i fi as the local pair if I ({after_region!r})")
+
+        # --- first suggestion buttons share a vertical line ---
+        set_text_and_settle(page, "teh cat. wierd dog. recieve mail.")
+        align = page.evaluate("""() => {
+            const rows = [...document.querySelectorAll(
+                '.mcphee-panel-item:has(.mcphee-panel-word-misspelled)')];
+            const xs = rows.map(r => {
+                const s = r.querySelector('.mcphee-panel-suggestion');
+                return s ? Math.round(s.getBoundingClientRect().left) : null;
+            }).filter(x => x !== null);
+            if (xs.length < 2) return { ok: false, reason: 'need 2+ rows', xs };
+            const spread = Math.max(...xs) - Math.min(...xs);
+            return { ok: spread <= 1, spread, xs };
+        }""")
+        ok(align.get("ok"),
+           f"first suggestion of each misspelled row aligns (spread {align.get('spread')}px, xs={align.get('xs')})")
 
         # --- accepting a suggestion keeps the overlay honest ---
         set_text_and_settle(page, "The dog sat. teh cat ran fast here.")

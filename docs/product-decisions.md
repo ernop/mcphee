@@ -261,6 +261,56 @@ Linked from [AGENTS.md](../AGENTS.md).
   detection." Implemented as general exact multi-word sequence discovery
   under the existing nearby-echo rule, with no curated allowlist.
 
+## 2026-08-13 — Do not mark the word currently being typed
+
+- Creator: "the word I'm typing myself at this very moment shall not show
+  up as misspelled please." While the caret is inside a word, or at either
+  edge of it, that word is not shown as misspelled (nor as unknown,
+  culture, or a capitalization nag). The mark and the panel row appear
+  once the caret leaves the word. Form guards still see the word — hiding
+  it is display-only, so a typo in the last word still blocks submit.
+  (Agent: this is the usual in-progress-token rule used by word processors;
+  a caret in the space after a word has left it.)
+
+## 2026-08-13 — Control tap corrects the nearest misspelling behind the caret
+
+- Creator: tapping Control with no other key "attempt[s] to just do the
+  most naive correction on the nearest misspelled word to my cursor going
+  backwards only"; look backward until any misspelling is found and
+  correct it based on the best guess; Ctrl+Z undoes that change; a further
+  Control tap does the same for the prior one.
+- Implemented as a Control-only tap (any other key in the chord cancels
+  it, so Ctrl+Z / Ctrl+C / Ctrl+Enter keep their meaning). The replacement
+  is a single occurrence, through the undo-preserving edit path, so Ctrl+Z
+  reverts just that guess. The next tap then sees the previous misspelling
+  as nearest. "Naive" means: use the confident pick when there is one,
+  otherwise the top dictionary suggestion; words with no guess are skipped
+  and the search continues backward.
+
+## 2026-08-13 — First suggestion buttons share a vertical line
+
+- Creator: "slightly move all the spelling checks right-ish so that they're
+  all aligned with each other in a vertical line? I mean just the first
+  one if ther are multiple options." The first suggestion (or cased-fix)
+  button of every spelling row lines up; later suggestions on the same
+  row still follow it.
+
+## 2026-08-13 — Space-boundary typos ("i fi" → "if I")
+
+- Creator, asking what would happen and whether algorithms exist: typing
+  something like "i fi", which could be "if I", "would be really nice to
+  be able to autocorrect." Then: treat "fi" (not a word) as a spelling
+  issue whose fix "clean[s] up the local region"; go ahead with the
+  method laid out (concatenate previous token + misspelling, try every
+  single-space placement and join, keep unique distance-1 dictionary-word
+  readings). Implemented: the misspelling is still "fi"; Control-tap,
+  localFix, and the panel's first suggestion rewrite the pair to "if I"
+  rather than guessing "fi"→"if" and leaving "i if". Standalone "i" in
+  that rewrite is capitalized as the pronoun.
+- Agent: only a single space between the previous token and the
+  misspelling participates; if more than one distance-1 reading exists the
+  region rewrite is refused and the single-word guess stands.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

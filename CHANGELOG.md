@@ -1,5 +1,30 @@
 # McPhee changelog
 
+## 3.10.0 — 2026-08-13
+
+The word currently being typed is not shown as misspelled; a Control tap
+applies a naive guess to the nearest misspelling behind the caret; first
+suggestion buttons share a vertical line; local space-slips such as
+"i fi" become "if I".
+
+- While the caret is inside a word (or at either edge of it), that word is
+  not marked misspelled, unknown, culture, or capitalization — overlay and
+  panel. Form guards still see it. The mark returns once the caret leaves
+  the word.
+- Tapping Control with no other key replaces the nearest misspelling at or
+  behind the caret with the best guess (confident pick, else the top
+  Hunspell suggestion). One occurrence, undo-preserving, so Ctrl+Z reverts
+  it; the next Control tap walks to the previous misspelling. Other Control
+  chords are unchanged.
+- The first suggestion (or cased-fix) button of every spelling row in the
+  panel aligns on one vertical line.
+- A misspelling immediately after a real word, separated by one space, is
+  also tried as a local slip: the pair is rewritten if there is exactly one
+  dictionary-word reading one edit away (join, or a different place to put
+  the space). "i fi" becomes "if I" — "fi" is not a word, and guessing
+  "fi"→"if" would leave "i if". Standalone "i" in that rewrite is the
+  pronoun and is capitalized.
+
 ## 3.9.1 — 2026-08-11
 
 Three overlay-correctness fixes, found while diagnosing visibly misplaced

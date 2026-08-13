@@ -263,6 +263,29 @@ After every render these must hold, or the marks are lies:
 - Prefer hiding to guessing: any state where correctness is unprovable
   renders as no overlay, not a best-effort overlay.
 
+Hiding the in-progress word (the token containing the caret) is a product
+rule, not a degraded display: the characters stay in the backdrop, the
+integrity check still runs, and form guards still see the word. Only the
+mark (and the matching panel row) is omitted until the caret leaves it.
+
+## Control-tap fixer (v3.10.0)
+
+A Control key tap with no other key applies `guessCorrection` to the
+nearest misspelled word at or behind the caret (one occurrence, undo-
+preserving). Ctrl+Z is native undo of that edit; the next tap then finds
+the previous misspelling. The gesture is wired in `attach()` so it works
+with or without the panel. Other Control chords cancel the tap.
+
+## Space-boundary typos (v3.10.0)
+
+"i fi" → "if I" is a letter sliding across a space (Damerau–Levenshtein
+with space as a character, or split/join). "fi" is not a word, so it is
+still a misspelling; the fix rewrites the local pair (previous token +
+single space + misspelling) when there is exactly one dictionary-word
+reading one edit away. Control-tap, localFix, and the panel preferred
+suggestion all use that rewrite; guessing "fi"→"if" alone would leave
+"i if". Standalone "i" in the rewrite is emitted as "I".
+
 ## Versioning and distribution
 
 - `McPhee.version` + `CHANGELOG.md` are the contract; bump the version on

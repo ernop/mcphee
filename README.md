@@ -19,8 +19,14 @@ notices with the distance between uses](docs/screenshot.png)
   fix everywhere, an add-to-dictionary button, and an ignore button (with
   a brief undo, and a list to un-ignore later). Hovering an item highlights
   every matching word or phrase in your text — for a repetition, both uses
-  at once; clicking one selects it. Fixes never destroy
-  your undo history — Ctrl+Z always works.
+  at once; clicking one selects it. The word you are currently typing is
+  not marked misspelled; it is checked once you leave it. Tap Control
+  (nothing else) to apply the best guess to the nearest misspelling behind
+  the caret; tap Control again for the one before that. A misspelling can
+  be a letter that slipped across a space (i fi → if I); that is fixed as
+  the local pair, not as the fragment alone. Fixes never destroy
+  your undo history — Ctrl+Z always works, including to undo a Control-tap
+  guess.
 - **Repetition detection**, inspired by John McPhee, who ran Kedit's `All`
   command over every piece to see each use of a chosen word and the
   distances between occurrences (*Draft No. 4*, "Structure"):
