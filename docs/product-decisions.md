@@ -383,6 +383,12 @@ Linked from [AGENTS.md](../AGENTS.md).
   product screenshot and the two add-on shots stay where they were.
   (Agent: alt text is the agent's, shown with this change.)
 
+## 2026-08-13 — Use the screenshot the creator gave
+
+- Creator: "yes, we should be using the screenshot i gave you." The
+  add-on on GitHub is illustrated by that image (`docs/browser.png`),
+  not the agent-captured stand-ins. Those two files are removed.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

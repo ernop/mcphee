@@ -76,13 +76,6 @@ notices with the distance between uses](docs/screenshot.png)
   is remembered per site. This add-on does not block submit (that is the
   Guard). McPhee is not watching the rest of the page.
 
-![A reply box on a web page with McPhee docked beside it — pink on
-misspellings, a − on the form's side, and the suggestions panel with
-one-click fixes](docs/addon-form.png)
-
-![The add-on toolbar: Allow McPhee on a form on this page. Only forms you
-allow are seen or checked.](docs/addon-allow.png)
-
 ## For the technically curious
 
 Technical documentation is indexed in [AGENTS.md](AGENTS.md).
