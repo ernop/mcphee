@@ -1,9 +1,9 @@
-# personalize-spelling-mcphee (Firefox)
+# personalized-spelling (Firefox)
 
-Puts regular McPhee on form inputs you have allowed. Product description:
+Puts personalized-spelling on form inputs you have allowed. Product description:
 [docs/personalize-spelling-mcphee.md](../docs/personalize-spelling-mcphee.md).
 
-This add-on does not block submit. That is McPhee Guard (`extension/`).
+This add-on does not block submit. That is the Guard (`extension/`).
 
 ## Build (required before first load)
 
@@ -19,7 +19,7 @@ The add-on must be self-contained, so copy the library and dictionaries in:
 2. Pick `personalize-spelling-mcphee/manifest.json`.
 3. Reload the add-on there after any change (this add-on lasts until Firefox restarts).
 
-The toolbar icon is often hidden behind Firefox's puzzle-piece button. Open that menu, find **personalize-spelling-mcphee**, and pin it.
+The toolbar icon is often hidden behind Firefox's puzzle-piece button. Open that menu, find **personalized-spelling**, and pin it.
 
 If Firefox asks whether the add-on may access data for all websites, allow it — otherwise it cannot see the page you are on.
 
@@ -32,8 +32,8 @@ the repo root) and open `/personalize-spelling-mcphee/testbed.html`.
 Nothing happens in a text box until you allow that box:
 
 1. Open the site (or the testbed).
-2. Click the **personalize-spelling-mcphee** toolbar icon.
-3. Click **Allow McPhee on a form on this page**.
+2. Click the **personalized-spelling** toolbar icon.
+3. Click **Allow personalized-spelling on a form on this page**.
 4. Click the text box you write in. A banner at the top of the page confirms it.
 
 The suggestions panel **docks beside that form** (default). A **+** on the

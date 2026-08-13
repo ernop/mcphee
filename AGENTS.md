@@ -6,16 +6,17 @@ this tree.
 
 ## What This Repo Is
 
-McPhee: a personal, customizable, minimal spellchecker — plus some other fun
+personalized-spelling: a personal, customizable, minimal spellchecker — plus some other fun
 stuff: detection of repeated obscure words, detection of mistaken nearby word
 reuse, and better spellchecking than the pitiful checkers Google and Apple
 ship. Product description for users is in [README.md](README.md).
 
 The project's internal name is **McPhee-personal-spellchecker** (package name
 `mcphee-personal-spellchecker`, lowercased per npm rules). The user-facing
-product name stays "McPhee". The internal rename does not touch the `McPhee`
-global, the `mcphee-` CSS prefix, or `mcphee_*` storage keys — those are API
-surface and persisted user data, not the project's name.
+product name is **personalized-spelling** — never just "McPhee" in public
+or product text. John McPhee the author is unchanged. The `McPhee` global,
+the `mcphee-` CSS prefix, and `mcphee_*` storage keys are API surface and
+persisted user data, not the product's name.
 
 ## The Creator, and the Partnership
 
@@ -51,6 +52,9 @@ The creator's latest explicit decision always controls product intent.
    the creator saying so.
 5. **Important information lives high in this tree; lesser information lives
    further down.**
+6. **The public product name is personalized-spelling.** Never refer to it
+   as just "McPhee" in public or product text. John McPhee the author is
+   the exception.
 
 ## Documentation Tree
 
@@ -61,8 +65,8 @@ Product:
 - [Product decision log](docs/product-decisions.md) — every product
   directive the creator has given, with their reasons. The agent must append
   to this whenever the creator gives product guidance.
-- [personalize-spelling-mcphee](docs/personalize-spelling-mcphee.md) —
-  Firefox add-on: McPhee on form inputs you allow.
+- [personalized-spelling](docs/personalize-spelling-mcphee.md) —
+  Firefox add-on: personalized-spelling on form inputs you allow.
 
 Technical:
 

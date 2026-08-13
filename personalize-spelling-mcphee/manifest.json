@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "personalize-spelling-mcphee",
+  "name": "personalized-spelling",
   "version": "0.2.0",
-  "description": "Apply McPhee spellcheck to form inputs you allow. Only those forms are seen or checked.",
+  "description": "Apply personalized-spelling to form inputs you allow. Only those forms are seen or checked.",
   "icons": {
     "32": "icons/icon-32.png",
     "48": "icons/icon-48.png",
@@ -45,6 +45,6 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "personalize-spelling-mcphee"
+    "default_title": "personalized-spelling"
   }
 }

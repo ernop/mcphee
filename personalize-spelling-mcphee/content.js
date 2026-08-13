@@ -279,12 +279,12 @@
         if (!still) m.detach();
       });
       if (bannerEl && mounts.length) {
-        banner("Allowed — McPhee will check this form.");
+        banner("Allowed — personalized-spelling will check this form.");
         setTimeout(removeBanner, 3000);
       }
     }).catch(function (err) {
       console.error("McPhee spelling:", err);
-      banner("McPhee could not start on this form.");
+      banner("personalized-spelling could not start on this form.");
     });
   }
 
@@ -321,7 +321,7 @@
 
   function startTeach() {
     teach = { active: true, hovered: null };
-    banner("Click the form input McPhee may see (Esc cancels)");
+    banner("Click the form input personalized-spelling may see (Esc cancels)");
     document.addEventListener("mouseover", onTeachHover, true);
   }
 
@@ -373,7 +373,7 @@
       saveTargets();
     }
     endTeach(null);
-    banner("Allowed — loading McPhee…");
+    banner("Allowed — loading personalized-spelling…");
     watchDom();
     syncMounts();
   }

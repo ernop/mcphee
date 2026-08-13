@@ -1,12 +1,12 @@
 {
   "name": {
-    "en-US": "personalize-spelling-mcphee"
+    "en-US": "personalized-spelling"
   },
   "summary": {
-    "en-US": "Apply McPhee spellcheck to form inputs you allow. Only those forms are seen or checked."
+    "en-US": "Apply personalized-spelling to form inputs you allow. Only those forms are seen or checked."
   },
   "description": {
-    "en-US": "Puts McPhee on form inputs you have allowed — and on no others.\n\nYou choose certain form inputs on certain sites. McPhee is not watching the web. Once you opt in, that form gets the regular McPhee spellcheck: the same checks, the same one-click fixes, the same personal dictionary. Nothing else about the site changes. Submit is not blocked.\n\nIt docks beside the form (the default). A + on that form's side opens the suggestions; click again to make it small on the side. Several allowed forms on one page each have their own +.\n\nAllow a form from the toolbar icon on that page."
+    "en-US": "Puts personalized-spelling on form inputs you have allowed — and on no others.\n\nYou choose certain form inputs on certain sites. personalized-spelling is not watching the web. Once you opt in, that form gets the regular spellcheck: the same checks, the same one-click fixes, the same personal dictionary. Nothing else about the site changes. Submit is not blocked.\n\nIt docks beside the form (the default). A + on that form's side opens the suggestions; click again to make it small on the side. Several allowed forms on one page each have their own +.\n\nAllow a form from the toolbar icon on that page."
   },
   "slug": "personalize-spelling-mcphee",
   "homepage": {

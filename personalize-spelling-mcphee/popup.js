@@ -52,7 +52,7 @@ api.tabs.query({ active: true, currentWindow: true }).then(function (tabs) {
   var url = tabs[0].url || "";
   if (restrictedUrl(url)) {
     document.getElementById("origin").textContent =
-      "Open the page you write on (not this browser page), then click Allow McPhee on a form on this page.";
+      "Open the page you write on (not this browser page), then click Allow personalized-spelling on a form on this page.";
     document.getElementById("teach").disabled = true;
     return;
   }
@@ -65,7 +65,7 @@ api.tabs.query({ active: true, currentWindow: true }).then(function (tabs) {
   }
   loadState().catch(function () {
     document.getElementById("origin").textContent =
-      "Click Allow McPhee on a form on this page, then click the box you write in.";
+      "Click Allow personalized-spelling on a form on this page, then click the box you write in.";
   });
 });
 
@@ -77,7 +77,7 @@ document.getElementById("teach").addEventListener("click", function () {
     .then(function () { window.close(); })
     .catch(function () {
       document.getElementById("origin").textContent =
-        "Reload this page, then click Allow McPhee on a form on this page.";
+        "Reload this page, then click Allow personalized-spelling on a form on this page.";
     });
 });
 

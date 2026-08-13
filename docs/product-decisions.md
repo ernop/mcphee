@@ -395,6 +395,11 @@ Linked from [AGENTS.md](../AGENTS.md).
   test page. Show the recent image from their screenshots of typing a
   draft post on x.com and seeing the suggestions.
 
+## 2026-08-13 — Public name is personalized-spelling, never just McPhee
+
+- Creator: rename it in the README. Generally we should never refer to
+  it as just "mcphee" but instead as personalized-spelling throughout.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

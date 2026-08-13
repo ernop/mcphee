@@ -1,7 +1,7 @@
-# McPhee
+# personalized-spelling
 
-![A draft post on x.com with McPhee's highlights in the text and the
-suggestions panel beside it](docs/browser.png)
+![A draft post on x.com with personalized-spelling highlights in the text
+and the suggestions panel beside it](docs/browser.png)
 
 A personal and customizable spellchecker — and some other fun stuff:
 
@@ -60,14 +60,15 @@ inspired by an author's personal tools to improve his writing, it also:
   submit buttons must refuse text containing misspellings — built for
   sites where a typo can't be fixed after posting. No override, no escape
   hatch; fix the word or add it to your dictionary.
-- **A Firefox add-on for forms on the web** (personalize-spelling-mcphee):
-  you allow certain boxes on certain sites; only those get McPhee — the
-  same checks, the same one-click fixes, the same personal dictionary.
-  It docks beside the form; a + opens the suggestions, and a second click
-  shrinks it. Several allowed forms on one page each have their own +.
-  You can switch a site to a side-of-window sidebar instead; that choice
-  is remembered per site. This add-on does not block submit (that is the
-  Guard). McPhee is not watching the rest of the page.
+- **A Firefox add-on for forms on the web** (personalized-spelling):
+  you allow certain boxes on certain sites; only those get
+  personalized-spelling — the same checks, the same one-click fixes, the
+  same personal dictionary. It docks beside the form; a + opens the
+  suggestions, and a second click shrinks it. Several allowed forms on one
+  page each have their own +. You can switch a site to a side-of-window
+  sidebar instead; that choice is remembered per site. This add-on does
+  not block submit (that is the Guard). personalized-spelling is not
+  watching the rest of the page.
 
 ## For the technically curious
 
