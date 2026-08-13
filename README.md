@@ -1,5 +1,10 @@
 # McPhee
 
+![McPhee docked beside a page in the browser — block highlights on the
+text, and the suggestions panel listing spelling fixes, add-to-dictionary
+and ignore buttons, and repeated phrases with the distance between
+uses](docs/browser.png)
+
 A personal and customizable spellchecker — and some other fun stuff:
 
 inspired by an author's personal tools to improve his writing, it also:

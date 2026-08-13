@@ -373,6 +373,16 @@ Linked from [AGENTS.md](../AGENTS.md).
   previous README because the add-on bullet had not been pushed. Alt
   text on the new images is the agent's, shown with this change.)
 
+## 2026-08-13 — README opens with the browser add-on in action
+
+- Creator, after a proposed ridge photograph under the title: "good but
+  please use the most recent image" from their screenshots, "which i
+  believe shows the browser version in action." That screenshot (McPhee
+  docked beside a page, issues panel listing spelling and repeated
+  phrases) now sits under the title as `docs/browser.png`. The earlier
+  product screenshot and the two add-on shots stay where they were.
+  (Agent: alt text is the agent's, shown with this change.)
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation
