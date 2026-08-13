@@ -400,6 +400,13 @@ Linked from [AGENTS.md](../AGENTS.md).
 - Creator: rename it in the README. Generally we should never refer to
   it as just "mcphee" but instead as personalized-spelling throughout.
 
+## 2026-08-13 — Public add-on listing renamed and reuploaded
+
+- Creator: is the public extension fixed named and reuploaded too; if
+  not, do that; aim is to be done with this part for a while. The AMO
+  listing name and slug are now personalized-spelling; version 0.2.1
+  (with that display name) is in Mozilla review.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

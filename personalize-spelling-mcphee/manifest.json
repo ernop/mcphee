@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "personalized-spelling",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Apply personalized-spelling to form inputs you allow. Only those forms are seen or checked.",
   "icons": {
     "32": "icons/icon-32.png",

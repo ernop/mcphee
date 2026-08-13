@@ -56,8 +56,8 @@ list Guard uses in this browser.
 - If a contenteditable highlight cannot be proven to sit on the analyzed
   word, highlighting hides (fail closed). The suggestions sidebar still
   lists the issues.
-- Listed on addons.mozilla.org (public catalog). Version 0.2.0 is in
+- Listed on addons.mozilla.org (public catalog). Version 0.2.1 is in
   Mozilla review; after approval anyone can install it from
-  https://addons.mozilla.org/firefox/addon/personalize-spelling-mcphee/
+  https://addons.mozilla.org/firefox/addon/personalized-spelling/
   Developer status:
-  https://addons.mozilla.org/en-US/developers/addon/personalize-spelling-mcphee/versions/6413252
+  https://addons.mozilla.org/en-US/developers/addon/personalized-spelling/versions/6413293

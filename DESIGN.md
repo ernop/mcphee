@@ -170,7 +170,7 @@ Still to build: dictionary-sync endpoint integration with a `storage.sync`
 mirror, optional overlay marks for textareas, per-guard profile/blockOn
 overrides, and an AMO-signed build.
 
-## Firefox extension — personalize-spelling-mcphee (v0.2.0, `personalize-spelling-mcphee/`)
+## Firefox extension — personalized-spelling (v0.2.1, `personalize-spelling-mcphee/`)
 
 A second WebExtension, separate from Guard: it does not block submit. The
 creator allows individual form inputs on individual sites; only then does
