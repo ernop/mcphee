@@ -61,7 +61,7 @@ Product:
 - [Product decision log](docs/product-decisions.md) — every product
   directive the creator has given, with their reasons. The agent must append
   to this whenever the creator gives product guidance.
-- [personalide-spelling-mcphee](docs/personalide-spelling-mcphee.md) —
+- [personalize-spelling-mcphee](docs/personalize-spelling-mcphee.md) —
   Firefox add-on: McPhee on form inputs you allow.
 
 Technical:
@@ -76,7 +76,7 @@ Technical:
   behavior change.
 - [extension/README.md](extension/README.md) — McPhee Guard (Firefox):
   build, load, teach.
-- [personalide-spelling-mcphee/README.md](personalide-spelling-mcphee/README.md)
+- [personalize-spelling-mcphee/README.md](personalize-spelling-mcphee/README.md)
   — the spelling add-on: build, load, allow a form.
 - `test/` — two layers, split by what each can see:
   - `test/node/` — analysis-layer suites in a VM sandbox: rules, exclusion

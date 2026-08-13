@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "personalide-spelling-mcphee",
+  "name": "personalize-spelling-mcphee",
   "version": "0.2.0",
   "description": "Apply McPhee spellcheck to form inputs you allow. Only those forms are seen or checked.",
   "icons": {
@@ -11,7 +11,7 @@
   },
   "browser_specific_settings": {
     "gecko": {
-      "id": "personalide-spelling-mcphee@fuseki.net",
+      "id": "personalize-spelling-mcphee@fuseki.net",
       "strict_min_version": "140.0",
       "data_collection_permissions": {
         "required": ["none"],
@@ -45,6 +45,6 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "personalide-spelling-mcphee"
+    "default_title": "personalize-spelling-mcphee"
   }
 }

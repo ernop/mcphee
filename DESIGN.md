@@ -3,7 +3,7 @@
 One personal spellcheck system, reused everywhere: the creator's article
 editors, prompt boxes, one-off pages, the McPhee Guard Firefox extension
 (`extension/`) that gates submission on arbitrary sites, and
-personalide-spelling-mcphee (`personalide-spelling-mcphee/`) which applies
+personalize-spelling-mcphee (`personalize-spelling-mcphee/`) which applies
 the regular checker to form inputs the creator has allowed. This document
 records the architecture decisions and the not-yet-built roadmap so each
 host copy can catch up to master with a folder copy and minor wiring.
@@ -170,7 +170,7 @@ Still to build: dictionary-sync endpoint integration with a `storage.sync`
 mirror, optional overlay marks for textareas, per-guard profile/blockOn
 overrides, and an AMO-signed build.
 
-## Firefox extension — personalide-spelling-mcphee (v0.2.0, `personalide-spelling-mcphee/`)
+## Firefox extension — personalize-spelling-mcphee (v0.2.0, `personalize-spelling-mcphee/`)
 
 A second WebExtension, separate from Guard: it does not block submit. The
 creator allows individual form inputs on individual sites; only then does
@@ -193,8 +193,8 @@ McPhee see that field and apply the regular checker.
   issues (different job).
 - **Dictionary** is `storage.local` key `mcphee_dict`, shared with Guard
   in this browser profile.
-- **Local debug first.** Temporary add-on via `about:debugging`; AMO sign
-  waits on the creator testing it.
+- **Local debug first.** Temporary add-on via `about:debugging`. Listed
+  on AMO so anyone can install it after Mozilla review.
 
 ## Overlay correctness (v3.4.0): how we never show wrong highlights
 

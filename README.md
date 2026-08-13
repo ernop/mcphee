@@ -62,6 +62,21 @@ notices with the distance between uses](docs/screenshot.png)
   submit buttons must refuse text containing misspellings — built for
   sites where a typo can't be fixed after posting. No override, no escape
   hatch; fix the word or add it to your dictionary.
+- **A Firefox add-on for forms on the web** (personalize-spelling-mcphee):
+  you allow certain boxes on certain sites; only those get McPhee — the
+  same checks, the same one-click fixes, the same personal dictionary.
+  It docks beside the form; a + opens the suggestions, and a second click
+  shrinks it. Several allowed forms on one page each have their own +.
+  You can switch a site to a side-of-window sidebar instead; that choice
+  is remembered per site. This add-on does not block submit (that is the
+  Guard). McPhee is not watching the rest of the page.
+
+![A reply box on a web page with McPhee docked beside it — pink on
+misspellings, a − on the form's side, and the suggestions panel with
+one-click fixes](docs/addon-form.png)
+
+![The add-on toolbar: Allow McPhee on a form on this page. Only forms you
+allow are seen or checked.](docs/addon-allow.png)
 
 ## For the technically curious
 

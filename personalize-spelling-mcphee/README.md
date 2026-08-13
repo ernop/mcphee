@@ -1,7 +1,7 @@
-# personalide-spelling-mcphee (Firefox)
+# personalize-spelling-mcphee (Firefox)
 
 Puts regular McPhee on form inputs you have allowed. Product description:
-[docs/personalide-spelling-mcphee.md](../docs/personalide-spelling-mcphee.md).
+[docs/personalize-spelling-mcphee.md](../docs/personalize-spelling-mcphee.md).
 
 This add-on does not block submit. That is McPhee Guard (`extension/`).
 
@@ -10,29 +10,29 @@ This add-on does not block submit. That is McPhee Guard (`extension/`).
 The add-on must be self-contained, so copy the library and dictionaries in:
 
 ```sh
-./personalide-spelling-mcphee/build.sh
+./personalize-spelling-mcphee/build.sh
 ```
 
 ## Load (temporary, for development)
 
 1. Firefox → `about:debugging` → **This Firefox** → **Load Temporary Add-on…**
-2. Pick `personalide-spelling-mcphee/manifest.json`.
+2. Pick `personalize-spelling-mcphee/manifest.json`.
 3. Reload the add-on there after any change (this add-on lasts until Firefox restarts).
 
-The toolbar icon is often hidden behind Firefox's puzzle-piece button. Open that menu, find **personalide-spelling-mcphee**, and pin it.
+The toolbar icon is often hidden behind Firefox's puzzle-piece button. Open that menu, find **personalize-spelling-mcphee**, and pin it.
 
 If Firefox asks whether the add-on may access data for all websites, allow it — otherwise it cannot see the page you are on.
 
 A local test page with a textarea and an x.com-shaped contenteditable
 composer is `testbed.html`. Serve the repo (`python3 -m http.server` from
-the repo root) and open `/personalide-spelling-mcphee/testbed.html`.
+the repo root) and open `/personalize-spelling-mcphee/testbed.html`.
 
 ## Allow a form (this is what makes it active)
 
 Nothing happens in a text box until you allow that box:
 
 1. Open the site (or the testbed).
-2. Click the **personalide-spelling-mcphee** toolbar icon.
+2. Click the **personalize-spelling-mcphee** toolbar icon.
 3. Click **Allow McPhee on a form on this page**.
 4. Click the text box you write in. A banner at the top of the page confirms it.
 
@@ -56,4 +56,8 @@ list Guard uses in this browser.
 - If a contenteditable highlight cannot be proven to sit on the analyzed
   word, highlighting hides (fail closed). The suggestions sidebar still
   lists the issues.
-- Signing / AMO push waits until this local debug build has been tested.
+- Listed on addons.mozilla.org (public catalog). Version 0.2.0 is in
+  Mozilla review; after approval anyone can install it from
+  https://addons.mozilla.org/firefox/addon/personalize-spelling-mcphee/
+  Developer status:
+  https://addons.mozilla.org/en-US/developers/addon/personalize-spelling-mcphee/versions/6413252

@@ -15,7 +15,7 @@ there.
   Corpus counts](https://norvig.com/ngrams/); powers the repetition detectors
 - `demo.html` — feature exercise page (open via any static server)
 - `extension/` — the McPhee Guard Firefox extension (see its README)
-- `personalide-spelling-mcphee/` — Firefox add-on: McPhee on form inputs
+- `personalize-spelling-mcphee/` — Firefox add-on: McPhee on form inputs
   you allow (highlights + suggestions sidebar; does not block submit)
 - `test/node/` — analysis-layer suites (`npm test`)
 - `test/browser/suite.py` — Playwright overlay suite (`python test/browser/suite.py`)

@@ -1,4 +1,4 @@
-// personalide-spelling-mcphee content script.
+// personalize-spelling-mcphee content script.
 // Field text is unread until that field has been allowed. Dictionary files
 // are fetched only after at least one allowed field exists on this origin.
 (function () {

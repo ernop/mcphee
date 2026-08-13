@@ -311,6 +311,14 @@ Linked from [AGENTS.md](../AGENTS.md).
   misspelling participates; if more than one distance-1 reading exists the
   region rewrite is refused and the single-word guess stands.
 
+## 2026-08-13 — README names the web add-on; list it on AMO for anyone
+
+- Creator: update the README to include the info on the new extension.
+- Creator: upload the extension; the goal is that anyone can use it if it
+  is published on AMO. (Agent: that is AMO's public/listed catalog, not
+  an unlisted signed XPI. A listed first version goes through Mozilla
+  review before it appears for everyone.)
+
 ## 2026-08-13 — Docked default, per-site memory, per-form +
 
 - Creator: the default method of it appearing shall be **docked**. If the
@@ -349,6 +357,21 @@ Linked from [AGENTS.md](../AGENTS.md).
   word, highlighting hides rather than guess. Shared personal
   dictionary with Guard in this browser. Local debug install first;
   no store push until the creator tests it.
+
+## 2026-08-13 — "personalide" is a misspelling of "personalize"
+
+- Creator: the misspelling of "personalize" is spreading; contain and
+  fix it immediately. The add-on name is **personalize-spelling-mcphee**
+  (folder, gecko id, AMO slug, user-visible title). The misspelled AMO
+  listing had been nominated for review and was not yet public; it was
+  deleted so it cannot be approved under the typo.
+
+## 2026-08-13 — GitHub README should show the add-on, with screenshots
+
+- Creator: GitHub still showed nothing about the extension; they want
+  that on the repo too, with screenshots. (Agent: origin still had the
+  previous README because the add-on bullet had not been pushed. Alt
+  text on the new images is the agent's, shown with this change.)
 
 ## Earlier standing decisions (recorded 2026-08-02)
 

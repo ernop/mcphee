@@ -1,4 +1,4 @@
-# personalide-spelling-mcphee
+# personalize-spelling-mcphee
 
 A Firefox add-on that puts McPhee on form inputs you have allowed — and
 on no others.
@@ -34,7 +34,7 @@ word you add in either add-on is known to both.
 These strings are the creator's product language, used as the add-on's
 visible text:
 
-- Add-on name: `personalide-spelling-mcphee`
+- Add-on name: `personalize-spelling-mcphee`
 - Allow a form: **Allow McPhee on a form on this page**
 - While choosing: **Click the form input McPhee may see (Esc cancels)**
 - After allowing: **Allowed — McPhee will check this form.**

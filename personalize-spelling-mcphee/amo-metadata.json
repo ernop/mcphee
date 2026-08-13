@@ -1,0 +1,25 @@
+{
+  "name": {
+    "en-US": "personalize-spelling-mcphee"
+  },
+  "summary": {
+    "en-US": "Apply McPhee spellcheck to form inputs you allow. Only those forms are seen or checked."
+  },
+  "description": {
+    "en-US": "Puts McPhee on form inputs you have allowed — and on no others.\n\nYou choose certain form inputs on certain sites. McPhee is not watching the web. Once you opt in, that form gets the regular McPhee spellcheck: the same checks, the same one-click fixes, the same personal dictionary. Nothing else about the site changes. Submit is not blocked.\n\nIt docks beside the form (the default). A + on that form's side opens the suggestions; click again to make it small on the side. Several allowed forms on one page each have their own +.\n\nAllow a form from the toolbar icon on that page."
+  },
+  "slug": "personalize-spelling-mcphee",
+  "homepage": {
+    "en-US": "https://github.com/ernop/mcphee"
+  },
+  "support_url": {
+    "en-US": "https://github.com/ernop/mcphee"
+  },
+  "categories": [
+    "language-support"
+  ],
+  "version": {
+    "license": "MIT",
+    "approval_notes": "Form text is read only after the user allows a specific field on a site. No page content is sent off the machine. Bundled files: typo-js (typo.min.js, upstream minified), Hunspell en_US aff/dic, Norvig wordfreq list, mcphee.js/css copied in by build.sh. data_collection_permissions is none."
+  }
+}
