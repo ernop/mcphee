@@ -177,6 +177,24 @@
   padding: 1px 4px;
 }
 
+.mcphee-checker {
+  padding: 4px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.mcphee-checker:last-of-type {
+  border-bottom: none;
+}
+
+.mcphee-checker-order {
+  margin-left: auto;
+  width: 48px;
+}
+
+.mcphee-checker-param {
+  padding-left: 22px;
+}
+
 /* Transient "undo ignore" chip, self-removes after 3 seconds. */
 .mcphee-undo-chip {
   display: flex;

@@ -407,6 +407,99 @@ Linked from [AGENTS.md](../AGENTS.md).
   listing name and slug are now personalized-spelling; version 0.2.1
   (with that display name) is in Mozilla review.
 
+## 2026-08-16 — Grammar checking limitation revoked
+
+- Creator: "revoke the limitation on grammar checking please." The DESIGN.md
+  non-goal ("Grammar checking beyond the cheap deterministic rules — that's
+  an LLM's job") no longer stands. Context from the same message: "harper
+  seems pretty interesting", and the creator wants research into
+  LanguageTool's detailed capabilities and other English checkers before
+  anything is integrated. No engine has been chosen or integrated yet.
+- The creator's larger ambition, in their words: "having a truly more
+  sophisticated version w/full history and tone and classified levels of
+  english e.g. CS Lewis' english vs Orwell's vs todays would be epic!"
+
+## 2026-08-16 — Dictionary coverage: usage-fed updates, not manual curation
+
+- Creator's concern with self-maintenance: "yes we can easily add words but
+  there are going to basically infinite new words all the time. if we could
+  instead regularly get updated chunks of what people write then that'd be
+  useful." Direction: research recurring sources of real usage rather than
+  committing to hand-curating a dictionary forever.
+- The creator also wants coverage to "include words which people use in x
+  when talking" — contemporary conversational vocabulary, not just edited
+  prose.
+- Confirmed in the same exchange: "pathologize" is a real word (Merriam-
+  Webster headword; OED dates it to the 1640s) missing from the current
+  dictionary and from the 2026 ESDB/SCOWL releases at both default and
+  large sizes — so no off-the-shelf dictionary swap solves coverage alone.
+
+## 2026-08-16 — Wishlist: word-origin view and style-lexicon suggestions
+
+- Creator: "I'd also ULTRA-like an 'identify word origin' (e.g. french,
+  greek, etc.) view within mcphee too! so i could toggle it on and just
+  check!!!! and even a 'suggest anglo-saxon equivalent' or 'suggest cs
+  lewis preferred word?' omg yes we must do this. note this down as a cool
+  thing i'd really like to add, and also please research it all."
+- Recorded as a directed wishlist item: a toggleable per-word etymology
+  view (origin language: French, Greek, Latin, Old English, etc.), plus
+  suggestion modes for Anglo-Saxon equivalents and author-styled diction
+  (C.S. Lewis named as the example). Research directed; nothing built yet.
+
+## 2026-08-16 — Dictionary: use 2026 ESDB; try a usage-chunk dict; no cloud API
+
+- Creator: "sure, use the 2026 dictionary, that's fine."
+- Creator, on a commercial/cloud spelling service: "unavailable so why.
+  don't do."
+- Creator first skipped a recurring usage pipeline as painful, then after
+  hearing what a usage-chunk intake is: "this actually sounds kinda cool
+  so you're saying we literally really could make our own updated dict?
+  ... well actually anyway let's just try it okya."
+- Direction: ship the 2026 ESDB dictionary, and try building our own
+  updated dictionary from usage chunks. No remote spelling API.
+
+## 2026-08-16 — Try Harper and LanguageTool; grammar is just grammar
+
+- Creator: "lets install harper and try it. 2. let's install languagetool
+  and test that too!" First they want pages that say what each actually
+  does, who maintains them, and whether they are fully free.
+- Creator: "confusion-pair is irrelevant to me. it's just a normal part of
+  grammar we don't need to especially mention it."
+
+## 2026-08-16 — Overlay categories: origin, Anglo-Saxon, author, word age
+
+- Creator: treat origin-view, Anglo-Saxon equivalent, and author-preferred
+  word (Lewis / Orwell / today's English) as "a new category of thing to
+  know about the english, within mcphee overlay" — "this triple-variant
+  overlay filter is nice."
+- Also add a fourth: "age of the word, the first encountered instance."
+- On Lewis/Orwell copyright caution: "Don't worry about legalisms re: cs
+  lewis stuff - I have legal copies of everything we'd use which I can
+  work with you to ensure that we legitimately respect such things."
+
+## 2026-08-16 — Checkers become independent optionsets
+
+- Creator: "within mcphee spelling checker OPTIONS (ie.. we have various
+  checkers; each shall have its own optionset; we might even have 2x
+  spellchekeers, one for each dict, right? and each checker shall have a
+  config ui entry in the overall config such that we can choose whether
+  to use it at all, the order, the params (e.g. words too close checker)
+  etc. right? this is a refactor, pelase do all of that til its done and
+  tested also."
+- Direction: each checker is independently enableable, ordered, and
+  parameterized, with its own config UI block. Two dictionary-backed
+  spellcheckers (current and 2026) are in scope. Formality profiles remain
+  as presets over those optionsets.
+
+## 2026-08-16 — 3.11.0 approved and shipped
+
+- Creator: "yes let's just approve all that and push it please." That
+  approves the new config label "misspellings, 2026 dictionary (pink)"
+  and directs the 3.11.0 checker-optionset release committed and pushed.
+- Creator also asked for a once-over with fixes or improvements, "even to
+  the point of medium or even large restructuring," before calling the
+  version complete.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

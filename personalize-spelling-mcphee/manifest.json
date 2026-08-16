@@ -38,6 +38,8 @@
         "mcphee.css",
         "vendor/typo/en_US.aff",
         "vendor/typo/en_US.dic",
+        "vendor/typo/en_US_2026.aff",
+        "vendor/typo/en_US_2026.dic",
         "vendor/wordfreq/en-30k.txt"
       ],
       "matches": ["<all_urls>"]

@@ -48,6 +48,8 @@
       McPhee.create({
         affUrl: api.runtime.getURL("vendor/typo/en_US.aff"),
         dicUrl: api.runtime.getURL("vendor/typo/en_US.dic"),
+        affUrl2026: api.runtime.getURL("vendor/typo/en_US_2026.aff"),
+        dicUrl2026: api.runtime.getURL("vendor/typo/en_US_2026.dic"),
         profile: "casual",
         customDictStorageKey: "__mcphee_guard_unused__",
       }),

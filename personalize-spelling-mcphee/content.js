@@ -69,6 +69,8 @@
       McPhee.create({
         affUrl: api.runtime.getURL("vendor/typo/en_US.aff"),
         dicUrl: api.runtime.getURL("vendor/typo/en_US.dic"),
+        affUrl2026: api.runtime.getURL("vendor/typo/en_US_2026.aff"),
+        dicUrl2026: api.runtime.getURL("vendor/typo/en_US_2026.dic"),
         freqUrl: api.runtime.getURL("vendor/wordfreq/en-30k.txt"),
         profile: "standard",
         customDictStorageKey: "__mcphee_spelling_unused__",

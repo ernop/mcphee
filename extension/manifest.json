@@ -20,7 +20,12 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["vendor/typo/en_US.aff", "vendor/typo/en_US.dic"],
+      "resources": [
+        "vendor/typo/en_US.aff",
+        "vendor/typo/en_US.dic",
+        "vendor/typo/en_US_2026.aff",
+        "vendor/typo/en_US_2026.dic"
+      ],
       "matches": ["<all_urls>"]
     }
   ],

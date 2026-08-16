@@ -69,6 +69,11 @@ async function main() {
     "if I|",
     "Control-tap cleans up the local region around fi, not fi alone");
   H.ok(rFi.applied && rFi.to === "if I", "Control-tap reports if I");
+  const oCaret = H.fromNotation("i fi|");
+  const taCaret = H.fakeTextarea(oCaret.text, oCaret.caret);
+  checker.applyNearestBackwardFix(taCaret, { caret: oCaret.caret });
+  H.eq(H.toNotation(taCaret.value, taCaret.selectionStart), "if I|",
+    "Control-tap still rewrites i fi when analyze opts carry a caret");
 
   const local = checker.localFix("i fi and teh cat");
   H.ok(local.text.indexOf("if I") !== -1, "localFix rewrites i fi to if I");

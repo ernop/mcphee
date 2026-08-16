@@ -28,6 +28,9 @@ Vendored components keep their own licenses:
   (https://github.com/cfinke/Typo.js)
 - vendor/typo/en_US.aff, en_US.dic — Hunspell en_US dictionary
   (SCOWL; BSD-style, see http://wordlist.aspell.net/)
+- vendor/typo/en_US_2026.aff, en_US_2026.dic — Hunspell en_US dictionary
+  from ESDB/SCOWL 2026.02.25 size 60 (same license; see
+  vendor/typo/README_en_US_2026.txt)
 - vendor/wordfreq/en-30k.txt — derived from Peter Norvig's Google Web
   Trillion Word Corpus counts (https://norvig.com/ngrams/), distributed by
   Norvig for free use

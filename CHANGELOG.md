@@ -1,5 +1,23 @@
 # McPhee changelog
 
+## 3.11.0 — 2026-08-16
+
+Each checker is its own optionset, and the 2026 dictionary is a second
+spellchecker.
+
+- Config lists every checker with its own on/off, order, and params. Formality
+  profiles are presets over those optionsets. Stored overrides are
+  `ruleOverrides.checkers[id] = { enabled, order, params }`; the older
+  `rules` / `params` keys still apply.
+- Two Hunspell files can be loaded (`affUrl`/`dicUrl` and optional
+  `affUrl2026`/`dicUrl2026`). A word is a misspelling only if every enabled
+  spellchecker rejects it. When the 2026 file is present it is the default
+  spelling dictionary; the original file stays available in config.
+- `McPhee.checkers` is the catalog. Panel section order follows checker
+  order.
+- Per-call checker params (`analyze(text, { checkers: { echo: { params:
+  … } } })`) apply to that run only; instance defaults are untouched.
+
 ## 3.10.1 — 2026-08-13
 
 The overlay keeps the textarea's real background and follows resizes.

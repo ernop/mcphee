@@ -23,11 +23,11 @@ and McPhee adopts its two core ideas:
 
 | layer | McPhee mechanism | grows via | scope |
 | --- | --- | --- | --- |
-| base language | Hunspell en_US (vendored) | never (replace file) | universal |
+| base language | Hunspell en_US (vendored; original file plus optional 2026 ESDB file, each its own spellchecker) | never (replace file) | universal |
 | built-in autofix | `COMMON_TYPOS` map | canonical repo commits | universal |
 | project jargon | `extraWords` + `autofixMap` options | project commits | per project |
 | personal dictionary | localStorage under `customDictStorageKey` | `addCustomWord` (the only `addWords` layer) | per user, per origin |
-| context rules | profiles (`standard`/`strict`/`casual`) + per-call `rules` overrides | code | per textarea / per call |
+| context rules | profiles (`standard`/`strict`/`casual`) as presets over per-checker optionsets (`enabled` / `order` / `params`); per-call `rules` still apply | code | per textarea / per call |
 
 Profiles are cSpell's `languageSettings`/`overrides` analog: the word layers
 stay constant while rule strictness flips per context. The "japanese" use case
@@ -327,7 +327,9 @@ suggestion all use that rewrite; guessing "fi"→"if" alone would leave
 
 ## Non-goals
 
-- Grammar checking beyond the cheap deterministic rules (that's an LLM's
-  job).
 - Multi-language dictionaries (en_US only until a real need appears).
 - Server-side rendering integration; McPhee is a client-side authoring aid.
+
+Grammar checking was a non-goal here until 2026-08-16, when the creator
+revoked that limitation (see the product decision log). No grammar engine
+is integrated yet; candidates are under research.

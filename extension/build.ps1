@@ -7,4 +7,6 @@ New-Item -ItemType Directory -Force -Path "$PSScriptRoot\vendor\typo" | Out-Null
 Copy-Item "$root\vendor\typo\typo.min.js" "$PSScriptRoot\vendor\typo\" -Force
 Copy-Item "$root\vendor\typo\en_US.aff" "$PSScriptRoot\vendor\typo\" -Force
 Copy-Item "$root\vendor\typo\en_US.dic" "$PSScriptRoot\vendor\typo\" -Force
+Copy-Item "$root\vendor\typo\en_US_2026.aff" "$PSScriptRoot\vendor\typo\" -Force
+Copy-Item "$root\vendor\typo\en_US_2026.dic" "$PSScriptRoot\vendor\typo\" -Force
 Write-Host "Extension assets copied. Load extension/manifest.json via about:debugging."
