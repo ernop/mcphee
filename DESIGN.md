@@ -301,9 +301,11 @@ mark (and the matching panel row) is omitted until the caret leaves it.
 
 A Control key tap with no other key applies `guessCorrection` to the
 nearest misspelled word at or behind the caret (one occurrence, undo-
-preserving). Ctrl+Z is native undo of that edit; the next tap then finds
-the previous misspelling. The gesture is wired in `attach()` so it works
-with or without the panel. Other Control chords cancel the tap.
+preserving). Left and right Control are the same gesture. Ctrl+Z is
+native undo of that edit; the next tap then finds the previous
+misspelling. The gesture is wired in `attach()` so it works with or
+without the panel. Other Control chords cancel the tap; IME Process /
+Unidentified / composing keydowns do not.
 
 ## Space-boundary typos (v3.10.0)
 

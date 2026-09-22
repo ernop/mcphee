@@ -500,6 +500,65 @@ Linked from [AGENTS.md](../AGENTS.md).
   the point of medium or even large restructuring," before calling the
   version complete.
 
+## 2026-08-17 — Harper and LanguageTool trial results (agent findings)
+
+- The creator asked whether Harper is in our system (it is not; it was only
+  a local trial, and nothing in the repo references it) and whether
+  LanguageTool claims to detect real-word confusions like "This is there
+  last chance."
+- Re-tested 2026-08-17 on the local install under ~/tools (JDK 25, LanguageTool
+  6.9 snapshot, 15 GB extracted English n-grams). As shipped, with or without
+  the n-gram data, "This is there last chance." is not flagged. The 8 GB
+  n-gram download only scores word pairs that are uncommented in
+  confusion_sets.txt; there/their, than/then, two/too, and were/where ship
+  commented out. Enabling there/their by hand then flags that sentence.
+  Enabling than/then still missed "I would rather stay then leave."
+- LanguageTool's useful local work is its hand-written pattern rules
+  (subject-verb agreement, its/it's, could of, a/an, and some homophones).
+  That is a different mechanism from the n-gram pair list.
+- The creator's verdict on Harper after the first trial: "harper sounds
+  completely useless if it can't detect that." After the re-test: "I really
+  think that confusion sets does not sound like a good way to solve issues
+  like this at all." No engine has been integrated.
+- The creator also directed (recorded in AGENTS.md): never present
+  remembered results as a test that was supposed to run now; rebuild the
+  environment and run the real test.
+
+## 2026-09-03 — Data sources for origin, Anglo-Saxon alternative, word age (agent findings)
+
+- The creator chose this research over further grammar-engine work. Everything
+  below was run locally on 2026-09-03; nothing is integrated yet.
+- Word origin: Wiktextract (kaikki.org, CC BY-SA / GFDL, refreshed weekly from
+  the Wiktionary dump) gives each English entry an `etymology_templates` chain
+  of `inh` / `der` / `bor` links with Wiktionary language codes. Tested on ten
+  words: walking the chain past Middle English gives a clean origin for every
+  one (begin, house, freedom, kingdom, understand → Old English; chance,
+  liberty, government → Old French; commence → Anglo-Norman; comprehend →
+  Latin). Derived forms whose etymology is written as affixation
+  (familiarity, encompass) need the base word resolved first. The English
+  extract is 3.0 GB JSONL; a precomputed word → origin table for the product
+  would be a few MB.
+- Anglo-Saxon alternative: two sources tested. The Anglish Wordbook (wiki,
+  CC BY-SA 4.0, ~9,200 rows) is keyed Anglish word → gloss, so it must be
+  inverted through its definitions; roughly half of its answers are revived
+  Old/Middle English words no reader knows ("commence" → "agin",
+  "government" → "retch"), which must be filtered to rows marked living
+  English. Better: Open English WordNet 2024 synonyms filtered by the
+  Wiktextract origin of each synonym. That gave commence → begin/start/get,
+  comprehend → grasp/dig, difficult → hard, question → wonder, chance →
+  luck/happen/find, and correctly nothing for government. WordNet does not
+  put liberty and freedom in one synset, so a synonym-only source misses
+  that pair; the Wordbook has it.
+- Word age: no free offline source exists. Wiktionary etymology text carried
+  no attestation dates in any of the ten samples. The Google Books 1-gram
+  corpus (CC BY 3.0) was tested as a first-appearance proxy and is unusable:
+  OCR and metadata noise date "blog" to 1620 and "email" to 1500 even after
+  requiring ten distinct volumes. Merriam-Webster's API has a real
+  first-known-use `date` field, but its license forbids automated queries
+  and derivative datasets, allows 1,000 lookups/day for a non-commercial
+  app, so it could only be an on-demand lookup, never a shipped table. The
+  OED is paid and not redistributable.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

@@ -85,7 +85,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.11.0";
+  var VERSION = "3.11.2";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -1504,11 +1504,13 @@ var McPhee = (function () {
       // background while that class is on would copy 'transparent' onto the
       // backdrop and the spell area would vanish. Drop the class for the
       // read, then put it back.
-      var wasTransparent = textarea.classList.contains("mcphee-textarea");
-      if (wasTransparent) textarea.classList.remove("mcphee-textarea");
+      // Measure typography while the integration class is present: host
+      // styles may target that class, including late font changes.
       MIRRORED_STYLES.forEach(function (prop) {
         backdrop.style[prop] = computed[prop];
       });
+      var wasTransparent = textarea.classList.contains("mcphee-textarea");
+      if (wasTransparent) textarea.classList.remove("mcphee-textarea");
       // Always border-box, never mirrored: syncGeometry sets the OUTER box
       // (clientWidth + borders). Mirroring a content-box textarea would add
       // the mirrored padding/borders on top of that, wrapping the backdrop
@@ -1696,21 +1698,31 @@ var McPhee = (function () {
     // Control tap (no other key): naive-correct the nearest misspelling
     // behind the caret. Other Control chords (Ctrl+Z, Ctrl+C, …) clear the
     // tap so they keep their native meaning; Ctrl+Z undoes the replacement
-    // because it went through the undo-preserving pipeline.
+    // because it went through the undo-preserving pipeline. IME engines
+    // (IBus on Linux) inject Process/Unidentified keydowns while Control
+    // is held; those are not a chord and must not cancel the tap.
     var ctrlTapClean = false;
+    function isControlKey(e) {
+      return e.key === "Control" || e.code === "ControlLeft" || e.code === "ControlRight";
+    }
+    function fieldFocused() {
+      var a = document.activeElement;
+      return a === textarea || !!(textarea.contains && textarea.contains(a));
+    }
     function onAnyKeyDown(e) {
-      if (e.key === "Control") {
-        if (!e.repeat && document.activeElement === textarea) ctrlTapClean = true;
+      if (isControlKey(e)) {
+        if (!e.repeat && fieldFocused()) ctrlTapClean = true;
         return;
       }
+      if (e.isComposing || e.key === "Process" || e.key === "Unidentified") return;
       ctrlTapClean = false;
     }
     function onCtrlKeyUp(e) {
-      if (e.key !== "Control") return;
+      if (!isControlKey(e)) return;
       var wasClean = ctrlTapClean;
       ctrlTapClean = false;
       if (!wasClean || !enabled) return;
-      if (document.activeElement !== textarea) return;
+      if (!fieldFocused()) return;
       if (textarea.readOnly || textarea.disabled) return;
       self.applyNearestBackwardFix(textarea, {
         profile: renderOpts.profile,

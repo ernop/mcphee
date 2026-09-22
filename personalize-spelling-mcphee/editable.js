@@ -340,19 +340,27 @@
     document.addEventListener("selectionchange", onSelectionChange);
 
     var ctrlTapClean = false;
+    function isControlKey(e) {
+      return e.key === "Control" || e.code === "ControlLeft" || e.code === "ControlRight";
+    }
+    function fieldFocused() {
+      var a = document.activeElement;
+      return a === el || !!(el.contains && el.contains(a));
+    }
     function onAnyKeyDown(e) {
-      if (e.key === "Control") {
-        if (!e.repeat && document.activeElement === el) ctrlTapClean = true;
+      if (isControlKey(e)) {
+        if (!e.repeat && fieldFocused()) ctrlTapClean = true;
         return;
       }
+      if (e.isComposing || e.key === "Process" || e.key === "Unidentified") return;
       ctrlTapClean = false;
     }
     function onCtrlKeyUp(e) {
-      if (e.key !== "Control") return;
+      if (!isControlKey(e)) return;
       var wasClean = ctrlTapClean;
       ctrlTapClean = false;
       if (!wasClean || !enabled) return;
-      if (document.activeElement !== el) return;
+      if (!fieldFocused()) return;
       checker.applyNearestBackwardFix(el, { rules: renderOpts.rules });
     }
     window.addEventListener("keydown", onAnyKeyDown, true);

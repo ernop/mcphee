@@ -471,6 +471,56 @@ def main():
         ok("teh" not in after_ctrl and "the cat" in after_ctrl,
            f"Control tap corrected teh ({after_ctrl!r})")
 
+        set_text_and_settle(page, "The dog sat. teh cat ran.")
+        page.locator(".mcphee-textarea").focus()
+        page.keyboard.press("ControlRight")
+        page.wait_for_timeout(500)
+        after_right = page.evaluate("document.querySelector('.mcphee-textarea').value")
+        ok("teh" not in after_right and "the cat" in after_right,
+           f"right Control tap corrected teh ({after_right!r})")
+
+        set_text_and_settle(page, "The dog sat. teh cat ran.")
+        page.locator(".mcphee-textarea").focus()
+        after_ime = page.evaluate("""() => {
+            const ta = document.querySelector('.mcphee-textarea');
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+            const opts = { bubbles: true, cancelable: true };
+            window.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
+                key: 'Control', code: 'ControlRight', location: 2,
+            }, opts)));
+            window.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
+                key: 'Process', code: '',
+            }, opts)));
+            window.dispatchEvent(new KeyboardEvent('keyup', Object.assign({
+                key: 'Control', code: 'ControlRight', location: 2,
+            }, opts)));
+            return ta.value;
+        }""")
+        ok("teh" not in after_ime and "the cat" in after_ime,
+           f"Control tap still applies when IME injects Process ({after_ime!r})")
+
+        set_text_and_settle(page, "The dog sat. teh cat ran.")
+        page.locator(".mcphee-textarea").focus()
+        after_chord = page.evaluate("""() => {
+            const ta = document.querySelector('.mcphee-textarea');
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+            const opts = { bubbles: true, cancelable: true };
+            window.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
+                key: 'Control', code: 'ControlLeft', location: 1,
+            }, opts)));
+            window.dispatchEvent(new KeyboardEvent('keydown', Object.assign({
+                key: 'x', code: 'KeyX',
+            }, opts)));
+            window.dispatchEvent(new KeyboardEvent('keyup', Object.assign({
+                key: 'Control', code: 'ControlLeft', location: 1,
+            }, opts)));
+            return ta.value;
+        }""")
+        ok(after_chord == "The dog sat. teh cat ran.",
+           f"a Control chord does not trigger the tap fixer ({after_chord!r})")
+
         set_text_and_settle(page, "i fi")
         page.locator(".mcphee-textarea").focus()
         page.keyboard.press("Control")

@@ -145,7 +145,8 @@ console.log(fix.wordChanges, fix.spaceRuns, fix.applied);
 
 // Control-tap fixer: nearest misspelling at or behind the caret, one
 // occurrence, undo-preserving. attach() already binds this to a Control
-// tap; hosts can also call it directly:
+// tap (left or right; IME Process keydowns do not cancel it); hosts can
+// also call it directly:
 sw.applyNearestBackwardFix(textarea);
 
 // ...or compute without touching the DOM:

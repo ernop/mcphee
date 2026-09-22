@@ -1,0 +1,16 @@
+---
+description: Keep proposals focused on one next change
+alwaysApply: true
+---
+
+# Propose One Step From Now
+
+- Make proposals for one concrete next change.
+- Do not split a recommendation into a "proposed base", followed by a
+  "proposed final" or later completion.
+- If the work cannot achieve the stated goal in one change, present the
+  available alternatives and trade-offs instead of disguising partial work as
+  the proposal.
+- State the current system and the practical outcome first. Technical detail
+  supports that picture; it does not replace it.
+- Clearly distinguish research, proposals, and changes actually made.

@@ -1,5 +1,21 @@
 # McPhee changelog
 
+## 3.11.2 — 2026-09-22
+
+- Preserve host typography targeting the integration class when refreshing
+  overlay styles, so late font changes keep highlights aligned.
+- Verified by the fractional-width and late-font browser checks.
+
+## 3.11.1 — 2026-08-18
+
+A Control tap still applies when IBus (or another IME) injects a Process
+keydown while Control is held.
+
+- The tap detector treats left and right Control the same (`key` or
+  `code`). IME `Process` / `Unidentified` / composing keydowns are not a
+  chord, so they no longer cancel the tap. Focus is accepted if it is
+  inside the field, not only when the field node is `activeElement`.
+
 ## 3.11.0 — 2026-08-16
 
 Each checker is its own optionset, and the 2026 dictionary is a second

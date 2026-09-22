@@ -104,6 +104,27 @@ Technical:
 
 ## Working Rules for Agents
 
+### Speaking with the creator (explicit directives, 2026-08-17)
+
+- Write in complete, proper English sentences. Do not write headline
+  fragments, and do not open a thought with a label or noun-phrase preamble
+  ("A first usage-chunk intake: take recent writing, ..."). Start with a
+  sentence that says the thing; if the thing needs a name, name it inside
+  that sentence.
+- Headers must themselves be proper English, and a short reply usually
+  needs none.
+- Do not use the "noun phrase — A, not B" em-dash contrast construction.
+- Never use words like "wart". Describe a flaw plainly: say what is wrong
+  and what it causes, without that kind of label.
+- Never present remembered or prior results as the answer to a test that
+  was supposed to run now. If the environment for a test is gone, rebuild
+  it and run the test; "I was going to do a real test, but it failed, so
+  I'll say what I thought before" is — in the creator's words — a
+  canonical no-no. (2026-08-17, after a deleted /tmp toolchain was excused
+  instead of re-downloaded.)
+
+### General
+
 - Distribution is copy-the-folder; keep the folder self-contained. (Current
   practice, agent-maintained. The creator has expressed no opinion on
   distribution, so nothing here is doctrine — do not elaborate on it.)
