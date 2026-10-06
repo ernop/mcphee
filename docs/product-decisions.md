@@ -559,6 +559,46 @@ Linked from [AGENTS.md](../AGENTS.md).
   app, so it could only be an on-demand lookup, never a shipped table. The
   OED is paid and not redistributable.
 
+## 2026-10-06 — Caps: a new level for capitalization style
+
+- Creator's directive, in their words: "let's add a new level of
+  standardization: 1. for the entire piece of text, to characterize its
+  'capitalization style'. and at least to tell us if such is consistent or
+  not. 2. second step: to be able to do/undo/redo/preview ALL
+  capitalization styles. Also, by percentage. Also, to be able to
+  apply/undo/et them both (all at once) and (see the diffs and approve
+  each one one by one)."
+- The styles, in the creator's words: "traditional (one space after '.',
+  new sentences begin with capital letter. lcstyle = new caps at start of
+  sentence; not necessarily giving every sentence its own ending '.' or
+  '?' etc. at LEAST we shall do these two."
+- Placement, in the creator's words: "as another level within mcphee to
+  spelling, usage, repetition etc, we shall also have: caps (consistency,
+  and tools to mass fix/one by one fix/view/preview)."
+- No reasons were stated.
+- Agent's readings, not the creator's statements:
+  - "lcstyle = new caps at start of sentence" is read as *no* caps at
+    sentence start (lc = lowercase).
+  - "by percentage" is read as the characterization reporting how much
+    of the text matches each style (percent of sentence starts and
+    sentence gaps that already conform), so a mixed text shows its split.
+  - "both" is read as the two ways to apply a style: everything at once,
+    or a diff list approved one change at a time.
+- Agent's design conclusions (see DESIGN.md "Caps style"): a sentence
+  start is the first word of a line, or the first word after `.` `!` `?`
+  plus spaces on the same line. Ellipses and common abbreviations
+  ("e.g.", "Mr.", single-letter initials) are not sentence ends, because
+  a wrong capital is worse than a missed one. "I", acronyms, mixed-case
+  words (iPhone, McPhee), and proper nouns (by culture list or dictionary
+  omission) are neutral: neither style changes them. Converting to
+  traditional never adds end punctuation (the existing rule that . vs ?
+  vs ! is a guess still stands). lcstyle has no spacing rule, so it
+  leaves gaps alone.
+- The creator saw the caps block and its full list of new UI strings and
+  approved them: "great, let's ppush that." The same message directed
+  updating the creator's article editor and the image-generation client to
+  3.12.0 and carrying out each one's release plan.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

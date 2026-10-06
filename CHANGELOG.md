@@ -1,5 +1,36 @@
 # McPhee changelog
 
+## 3.12.0 — 2026-10-06
+
+Caps: a new level that characterizes the whole text's capitalization style,
+tells whether it is consistent, and converts it to any named style, either
+all at once or one approved change at a time.
+
+- Two styles, `McPhee.capsStyles`: **traditional** (sentences start with a
+  capital; one space after a sentence end) and **lcstyle** (sentences start
+  lowercase; no spacing rule, no end punctuation required).
+- `capsReport(text)` counts capital vs lowercase sentence starts and one /
+  two / three+ space sentence gaps, says whether either is mixed, and gives
+  each style a match percent and change count.
+- `capsChanges(text, style)` lists every edit; `applyCapsChanges(text,
+  changes)` applies any subset and throws if a change does not match the
+  text; `convertCaps(text, style)` applies them all.
+- New `caps` checker (on in every profile): marks the sentence starts and
+  one/two-space gaps that depart from the text's own majority, in khaki.
+  It never adds a second mark on a span another rule already flags.
+- Panel: a caps block with the verdict, the counts, and one line per style
+  (match percent, change count, preview, apply all). Preview opens the
+  diff list with apply / skip per change and apply all remaining. Undo /
+  redo step through caps edits while the text is unchanged since; Ctrl+Z
+  still works natively. Caps departure rows fix one spot to the majority
+  form.
+- Sentence starts: the first word of each line (after list/quote markers
+  and opening quotes) and the first word after `.` `!` `?` plus spaces.
+  Ellipses, listed abbreviations, dotted tokens, and capital initials are
+  not sentence ends. I, acronyms, mixed-case words, and proper nouns are
+  neutral and never changed. Code-indented lines and exclusion zones are
+  skipped.
+
 ## 3.11.2 — 2026-09-22
 
 - Preserve host typography targeting the integration class when refreshing

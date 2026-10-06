@@ -288,7 +288,7 @@ def main():
         # --- panel section order: one color block per issue type ---
         order = page.evaluate("""() => {
             const rank = { misspelled: 0, unknown: 1, culture: 2, echo: 3,
-                           obscure: 4, capitalization: 5, punctuation: 6, doublespace: 7 };
+                           obscure: 4, capitalization: 5, punctuation: 6, caps: 7, doublespace: 8 };
             const rows = [...document.querySelectorAll(".mcphee-panel-item .mcphee-panel-word")];
             return rows.map(w => {
                 const cls = [...w.classList].find(c => c.startsWith("mcphee-panel-word-"));
@@ -559,6 +559,65 @@ def main():
             ok(not any("integrity" in w for w in warnings), "no integrity warnings after acceptance")
         else:
             ok(False, "found a suggestion button to click")
+
+        # --- caps block: characterize, apply all, undo/redo, review one by one ---
+        def ta_value():
+            return page.evaluate("document.querySelector('.mcphee-textarea').value")
+
+        def caps_btn(line_selector, label):
+            return page.locator(line_selector).locator("button", has_text=label).first
+
+        mixed = "The dog sat.  the cat ran. Then it rained. So it goes."
+        set_text_and_settle(page, mixed)
+        ok(page.locator(".mcphee-caps").count() == 1, "caps block is shown")
+        ok(page.locator(".mcphee-caps-verdict").inner_text() == "mixed",
+           "mixed text reads as mixed")
+        percents = page.locator(".mcphee-caps-style .mcphee-caps-percent").all_inner_texts()
+        ok(percents == ["71%", "25%"], f"each style shows its match percent ({percents})")
+        ok(page.locator(".mcphee-panel-word-caps").count() == 2,
+           "the minority start and the minority gap each get a caps row")
+
+        warnings.clear()
+        caps_btn(".mcphee-caps-style:has-text('traditional')", "apply all").click()
+        page.wait_for_timeout(600)
+        ok(ta_value() == "The dog sat. The cat ran. Then it rained. So it goes.",
+           f"apply all converts to traditional ({ta_value()!r})")
+        ok(page.locator(".mcphee-caps-verdict").inner_text() == "consistent",
+           "after apply all the text reads as consistent")
+        caps_btn(".mcphee-caps-head", "undo").click()
+        page.wait_for_timeout(600)
+        ok(ta_value() == mixed, f"undo restores the original ({ta_value()!r})")
+        caps_btn(".mcphee-caps-head", "redo").click()
+        page.wait_for_timeout(600)
+        ok(ta_value() == "The dog sat. The cat ran. Then it rained. So it goes.",
+           "redo reapplies the conversion")
+        ok(not any("integrity" in w for w in warnings), "no integrity warnings across caps edits")
+
+        set_text_and_settle(page, "The dog sat. The cat ran. Then it rained.")
+        caps_btn(".mcphee-caps-style:has-text('lcstyle')", "preview").click()
+        page.wait_for_timeout(300)
+        ok(page.locator(".mcphee-caps-change").count() == 3, "lcstyle preview lists every change")
+        ok(ta_value() == "The dog sat. The cat ran. Then it rained.", "preview does not edit the text")
+        page.locator(".mcphee-caps-change").nth(1).locator("button", has_text="skip").click()
+        page.wait_for_timeout(300)
+        ok(page.locator(".mcphee-caps-change").count() == 2, "a skipped change leaves the list")
+        page.locator(".mcphee-caps-change").first.locator("button", has_text="apply").click()
+        page.wait_for_timeout(600)
+        ok(ta_value() == "the dog sat. The cat ran. Then it rained.",
+           f"approving one change edits only that sentence start ({ta_value()!r})")
+        ok(page.locator(".mcphee-caps-change").count() == 1, "the approved change leaves the list")
+        caps_btn(".mcphee-caps-reviewhead", "apply all remaining").click()
+        page.wait_for_timeout(600)
+        ok(ta_value() == "the dog sat. The cat ran. then it rained.",
+           f"apply all remaining keeps the skipped change unapplied ({ta_value()!r})")
+
+        set_text_and_settle(page, "The dog sat. The cat ran. the bird flew. Then it rained.")
+        caps_row = page.locator(".mcphee-panel-item:has(.mcphee-panel-word-caps)")
+        ok(caps_row.count() == 1, "one caps departure row")
+        caps_row.first.locator(".mcphee-panel-suggestion").click()
+        page.wait_for_timeout(600)
+        ok(ta_value() == "The dog sat. The cat ran. The bird flew. Then it rained.",
+           f"the row's fix applies the majority form ({ta_value()!r})")
 
         browser.close()
     httpd.shutdown()

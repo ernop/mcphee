@@ -317,6 +317,53 @@ reading one edit away. Control-tap, localFix, and the panel preferred
 suggestion all use that rewrite; guessing "fi"→"if" alone would leave
 "i if". Standalone "i" in the rewrite is emitted as "I".
 
+## Caps style (v3.12.0)
+
+The creator's directive is in the product decision log (2026-10-06). Caps
+is a level beside spelling, usage, and repetition: it characterizes the
+whole text's capitalization style, says whether that style is consistent,
+and converts the text to any named style.
+
+- **Styles are a catalog** (`CAPS_STYLES`): each names a sentence-start
+  case and an optional sentence-gap string. traditional = capital starts
+  and `" "`; lcstyle = lowercase starts and no gap rule (null leaves gaps
+  alone). Adding a style is one catalog entry; the report, conversion,
+  panel lines, and tests iterate the catalog.
+- **One observation pass feeds everything.** `capsObservations` finds
+  sentence starts and sentence gaps once. The report, the change list for
+  every style, and the departure marks are all derived from it, so the
+  percentages, the preview, and the marks cannot disagree.
+- **Sentence boundaries favor precision.** A wrong capital is an edit to
+  the author's text; a missed boundary is a missed edit. So ellipses, a
+  short abbreviation list, dotted tokens, and capital initials are not
+  boundaries, and a new line is (lcstyle writing often has no end
+  punctuation, so line starts are the only reliable boundary it has).
+- **Neutral words are never changed by any style.** These are the pronoun I,
+  acronyms and mixed-case words, and proper nouns: anything on the culture
+  list, or a word whose lowercase form the dictionary rejects. They also
+  count toward neither style's percentage.
+- **Percent = conforming share of what the style has a rule for**, floored
+  so 100% means zero changes. lcstyle has no gap rule, so its percent
+  counts starts only.
+- **Changes carry their expected text.** `applyCapsChanges` checks each
+  change's `from` against the text and throws on mismatch or overlap. A
+  stale list cannot edit the wrong characters.
+- **Departure marks use the text's own majority**, not a named style:
+  "consistent" is about the text agreeing with itself. A tie has no
+  majority and marks nothing. 3+ space gaps belong to doublespace. A span
+  another rule already flags (misspelling, strict-profile capitalization)
+  keeps only that rule's mark.
+- **Undo/redo in the panel is an explicit history of caps edits**, each
+  entry `{ before, after }`. An entry applies only while the textarea
+  still holds exactly the text it expects; once the author has typed,
+  native Ctrl+Z is the undo (every caps edit also goes through the native
+  undo-preserving edit path, one undo step each).
+- **Review state survives its own edits.** The preview list's skipped
+  changes are offsets shifted through each applied change; any other
+  edit to the text resets the list.
+- Converting to traditional does not add end punctuation (. vs ? vs ! is a
+  guess, as `localFix` has always held).
+
 ## Versioning and distribution
 
 - `McPhee.version` + `CHANGELOG.md` are the contract; bump the version on

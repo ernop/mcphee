@@ -86,8 +86,9 @@ Technical:
   - `test/node/` — analysis-layer suites in a VM sandbox: rules, exclusion
     zones, caret mapping written in caret notation ("|" marks the caret,
     so every expectation is a picture of the textarea, never offset
-    arithmetic), in-progress-word display, Control-tap backward fix, and
-    checker optionsets (enable / order / params, two dictionaries).
+    arithmetic), in-progress-word display, Control-tap backward fix,
+    checker optionsets (enable / order / params, two dictionaries), and
+    caps style (report, conversion, partial application, departures).
     Run: `npm test`.
   - `test/browser/suite.py` — Playwright suite for what Node cannot see:
     overlay visibility, wrap-parity integrity across a content matrix,
