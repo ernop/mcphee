@@ -118,7 +118,7 @@ Design decisions:
   one-click dismiss.
 - **No autofix, ever**: unlike spelling, repetition has no mechanical
   correction — choosing the replacement word is exactly the author's job. The
-  tooling's whole duty is *locating* the echo (marks + hover-to-scroll) and
+  tooling's whole duty is *locating* the echo (marks, hover highlight, click to navigate) and
   getting out of the way (dismiss).
 - **Two exemption tiers**: personal-dictionary/extraWords words are
   permanently exempt (topic vocabulary must be allowed to repeat — an article
@@ -296,6 +296,20 @@ Hiding the in-progress word (the token containing the caret) is a product
 rule, not a degraded display: the characters stay in the backdrop, the
 integrity check still runs, and form guards still see the word. Only the
 mark (and the matching panel row) is omitted until the caret leaves it.
+Only a collapsed caret is typing: a selected word (a panel navigation, a
+double-click) keeps its mark and row. Otherwise a row click would hide the
+very word it navigated to and shift the rows under the pointer.
+
+## Panel navigation (v3.12.1)
+
+Hover only highlights; it never scrolls. Rows rebuild and slide under a
+resting pointer (after typing, after acting on a row), and browsers then
+fire `mouseenter` on whatever row arrived, so a hover is not a request to
+move. A click (row background or **select**) is the only panel gesture
+that scrolls: it focuses with `preventScroll`, selects the word, and
+`scrollToOffset` centers it. With highlights off the hidden backdrop is
+refilled with plain text for that one measurement. Keeping the caret's
+row visible scrolls only the panel's own scroller, never the page.
 
 ## Control-tap fixer (v3.10.0)
 

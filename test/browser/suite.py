@@ -1,8 +1,8 @@
 """Real-browser suite (Playwright + demo.html): the things the Node tests
 cannot see — overlay visibility, wrap-parity integrity, wrap points at
 fractional widths, hover highlighting, panel section order, in-progress-word
-hiding, Control-tap correction, first-suggestion alignment, and suggestion
-acceptance.
+hiding, panel navigation, Control-tap correction, first-suggestion alignment,
+and suggestion acceptance.
 
 Geometry is never asserted with pixel math on marks. The library's own
 integrity self-check is the primary oracle: if the overlay stays visible,
@@ -461,6 +461,93 @@ def main():
                 .map(m => m.textContent)
         """)
         ok("teh" in left_word, f"teh is marked once the caret leaves it ({left_word})")
+
+        # --- panel navigation: hover only highlights; a click selects the word
+        # and centers it, and the view stays there with the word's mark and row
+        # through the re-render that follows (rows rebuild under the pointer) ---
+        filler = "The river ran past the old mill and the town was quiet that day."
+        typos = {4: "recieve", 16: "definately", 28: "seperate", 39: "occured"}
+        set_text_and_settle(page, "\n\n".join(
+            f"{filler} We {typos[i]} it." if i in typos else filler for i in range(42)))
+        misspelled_rows = page.locator(".mcphee-panel-item:has(.mcphee-panel-word-misspelled)")
+        ta_box = page.locator(".mcphee-textarea").bounding_box()
+
+        def park_in_text():
+            page.evaluate("""() => {
+                const ta = document.querySelector('.mcphee-textarea');
+                ta.blur();
+                ta.setSelectionRange(0, 0);
+                ta.scrollTop = 0;
+                window.scrollTo(0, 0);
+            }""")
+            page.mouse.move(ta_box["x"] + 40, ta_box["y"] + 40)
+            page.wait_for_timeout(300)
+
+        def nav_state():
+            return page.evaluate("""() => {
+                const ta = document.querySelector('.mcphee-textarea');
+                const backdrop = document.querySelector('.mcphee-backdrop');
+                const walker = document.createTreeWalker(backdrop, NodeFilter.SHOW_TEXT);
+                let node, remaining = ta.selectionStart, y = null;
+                while ((node = walker.nextNode())) {
+                    if (remaining <= node.nodeValue.length) {
+                        const r = document.createRange();
+                        r.setStart(node, remaining);
+                        r.collapse(true);
+                        y = r.getBoundingClientRect().top - backdrop.getBoundingClientRect().top
+                            + backdrop.scrollTop - ta.scrollTop;
+                        break;
+                    }
+                    remaining -= node.nodeValue.length;
+                }
+                return {
+                    top: ta.scrollTop,
+                    selected: ta.value.slice(ta.selectionStart, ta.selectionEnd),
+                    y: y, half: ta.clientHeight / 2,
+                    visible: y !== null && y >= 0 && y <= ta.clientHeight - 10,
+                    marked: !!backdrop.querySelector('mark[data-start="' + ta.selectionStart + '"]'),
+                    pageY: window.scrollY,
+                };
+            }""")
+
+        park_in_text()
+        ok(misspelled_rows.count() == 4, f"four misspelling rows ({misspelled_rows.count()})")
+        for i in range(misspelled_rows.count()):
+            misspelled_rows.nth(i).hover()
+            page.wait_for_timeout(120)
+        ok(nav_state()["top"] == 0, "hovering rows never scrolls the text")
+
+        park_in_text()
+        misspelled_rows.nth(2).locator(".mcphee-panel-word").click()
+        page.wait_for_timeout(100)
+        first = nav_state()
+        page.wait_for_timeout(1500)  # caret debounce, panel re-render, overlay poll
+        later = nav_state()
+        ok(first["selected"] == "seperate" and first["visible"],
+           f"clicking a row selects its word and brings it into view ({first})")
+        ok(abs(first["y"] - first["half"]) <= 30, f"the clicked word is centered ({first['y']} vs {first['half']})")
+        ok(later["top"] == first["top"] and later["selected"] == "seperate",
+           f"the view stays on the clicked word after the panel re-renders ({first['top']} -> {later['top']})")
+        ok(later["marked"], "the selected word keeps its mark")
+        ok(any(t.startswith("seperate") for t in misspelled_rows.all_text_contents()),
+           "the selected word keeps its panel row")
+        ok(later["pageY"] == 0, f"navigating does not scroll the page ({later['pageY']})")
+
+        park_in_text()
+        page.locator(".mcphee-textarea").click(position={"x": 40, "y": 15})
+        misspelled_rows.nth(1).hover()
+        page.evaluate("document.querySelector('.mcphee-textarea').scrollTop = 0")
+        page.keyboard.type("abc ", delay=40)
+        page.wait_for_timeout(1500)  # the panel rebuilds under the resting pointer
+        ok(nav_state()["top"] == 0, "typing with the pointer resting on the panel does not scroll the text")
+
+        page.click("#toggle")
+        park_in_text()
+        misspelled_rows.nth(3).locator(".mcphee-panel-word").click()
+        page.wait_for_timeout(300)
+        off = nav_state()
+        ok(off["selected"] == "occured" and off["visible"], f"navigation works with highlights off ({off})")
+        page.click("#toggle")
 
         # --- Control tap: naive-correct nearest misspelling behind the caret ---
         set_text_and_settle(page, "The dog sat. teh cat ran.")

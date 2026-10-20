@@ -1,5 +1,27 @@
 # McPhee changelog
 
+## 3.12.1 — 2026-10-20
+
+Panel navigation stays where you click.
+
+- Hovering a panel row only highlights its marks; it never scrolls the
+  text. Rows rebuild and slide under a resting pointer (after typing, after
+  acting on a row), so a hover is not a request to move. Caps change rows no
+  longer scroll on hover either.
+- Clicking a row (or **select**) selects the word and centers it in the
+  text box. Focusing no longer scrolls the page, or in Firefox the text, on
+  its own.
+- A selected word is not the word being typed: it keeps its mark and its
+  panel row. Before, the selection hid both, the rows shifted under the
+  pointer, and the next row's hover scrolled the text elsewhere.
+- `scrollToOffset` and click navigation work with highlights off.
+- Keeping the caret's row in view scrolls only the panel, never the page.
+- Rows whose occurrences are all off screen are no longer dimmed (reduced
+  contrast turned their text gray); their word is set in normal weight
+  instead, so bold rows match the text in view.
+- The drawer opens and closes without a slide transition (no transitions
+  anywhere, 2026-08-03).
+
 ## 3.12.0 — 2026-10-06
 
 Caps: a new level that characterizes the whole text's capitalization style,

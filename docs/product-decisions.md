@@ -599,6 +599,30 @@ Linked from [AGENTS.md](../AGENTS.md).
   updating the creator's article editor and the image-generation client to
   3.12.0 and carrying out each one's release plan.
 
+## 2026-10-20 — Panel navigation must not move the text by itself
+
+- Creator, in the article editor: "mouseover or click-to-scroll, for the
+  mcphee spellchecker within the article editor, keeps moving/scrolling me
+  to the wrong place ... i'm trying to sometimes add my own words, sometimes
+  use the highlighted terms as ag uide, then clicking to navt o one of them
+  ... right now this pattern is almost unusable. also please feel free to
+  modify mcphee and also [the creator's site] to make this right." Then: "why isn't
+  highlighting of misspelled words, and easynav working at the preesnt
+  ttime".
+- Since 3.12.1, hovering a row only highlights and never scrolls; a click
+  on a row or **select** selects the word and centers it, and the view
+  stays there. The selected word keeps its mark and its row. Navigation
+  works with highlights off.
+- Agent's findings, not the creator's statements: hover-to-scroll was an
+  agent addition in 1.3.0, never a creator directive. A row click put the
+  caret inside the word, so the 2026-08-13 in-progress rule hid that word's
+  mark and row; the panel rebuilt, another row slid under the resting
+  pointer, and its hover scrolled the text elsewhere. Typing with the
+  pointer resting on the panel did the same. With highlights off, a click
+  selected the word without bringing it into view in Chrome. The agent read
+  "the word I'm typing myself at this very moment" as a collapsed caret, so
+  a selected word is no longer treated as being typed.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation
