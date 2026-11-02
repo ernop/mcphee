@@ -2,7 +2,8 @@
 cannot see — overlay visibility, wrap-parity integrity, wrap points at
 fractional widths, hover highlighting, panel section order, in-progress-word
 hiding, panel navigation, Control-tap correction, first-suggestion alignment,
-and suggestion acceptance.
+suggestion acceptance, and an integrity check that never moves the page
+(Chromium and Firefox).
 
 Geometry is never asserted with pixel math on marks. The library's own
 integrity self-check is the primary oracle: if the overlay stays visible,
@@ -13,7 +14,7 @@ comparing which characters land on which line against a reference mirror
 sized at the textarea's exact fractional width (see WRAP_POINT_JS).
 
 Run: python test/browser/suite.py
-Requires: pip install playwright && playwright install chromium
+Requires: pip install playwright && playwright install chromium firefox
 Optional: a prod_bodies.json beside this file ([{"id":..,"body":".."}]) adds
 real article bodies to the content matrix. It is never committed.
 """
@@ -193,6 +194,105 @@ def set_text_and_settle(page, body):
     # both react. (A bare .value write only reaches the overlay's poll.)
     page.fill(".mcphee-textarea", body)
     page.wait_for_timeout(1800)  # 700ms poll + render + one self-repair round
+
+
+# Scrolls the page so the view's bottom edge sits `below` px past the
+# textarea's bottom edge (negative: above it), blurs the textarea, and
+# returns a click point on a visible line of it. The click focuses the
+# textarea and moves the caret to another word, so the overlay renders and
+# runs its integrity check.
+AIM_CLICK_JS = """async below => {
+    const ta = document.querySelector('.mcphee-textarea');
+    ta.blur();
+    const rect = ta.getBoundingClientRect();
+    const wanted = Math.round(rect.bottom + scrollY - innerHeight + below);
+    window.scrollTo(0, wanted);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    const now = ta.getBoundingClientRect();
+    return {
+        wanted, y0: Math.round(scrollY),
+        x: now.left + now.width / 2,
+        y: Math.min(innerHeight / 2, now.bottom - 100),
+    };
+}"""
+
+COUNT_RENDERS_JS = """() => {
+    window.__renders = 0;
+    window.__renderObserver = new MutationObserver(() => { window.__renders++; });
+    window.__renderObserver.observe(document.querySelector('.mcphee-backdrop'), { childList: true });
+}"""
+
+READ_RENDERS_JS = """() => {
+    window.__renderObserver.disconnect();
+    return { y1: Math.round(scrollY), renders: window.__renders };
+}"""
+
+
+# The integrity check collapses the textarea to measure its content height.
+# These checks cover what that measurement must not do, in both engines:
+# before 3.12.2 Firefox clamped the page's scroll position on every check
+# while the view reached past the textarea's bottom edge, so clicking into
+# the lower part of a tall textarea jumped the page up.
+def measurement_checks(p, engine):
+    browser = getattr(p, engine).launch()
+    page = browser.new_page(viewport={"width": 1280, "height": 800})
+    warnings = []
+    page.on("console", lambda m: warnings.append(m.text) if m.type in ("warning", "error") else None)
+    page.goto(f"http://127.0.0.1:{PORT}/demo.html")
+    page.wait_for_selector(".mcphee-panel-item", timeout=15000)
+    page.wait_for_timeout(800)
+
+    # A textarea as tall as its text, as an auto-growing host makes it, so
+    # the page scrolls instead of the textarea.
+    page.evaluate("""() => {
+        const ta = document.querySelector('.mcphee-textarea');
+        ta.value = Array.from({ length: 60 }, (_, i) =>
+            `Line ${i + 1}: the river ran past the old mill and the town was quiet that day.`).join('\\n');
+        ta.style.height = '0px';
+        ta.style.height = (ta.scrollHeight + 40) + 'px';
+        ta.dispatchEvent(new Event('input', { bubbles: true }));
+    }""")
+    page.wait_for_timeout(1500)
+    for label, below in (("the view inside the textarea", -300),
+                         ("the view past the textarea's bottom edge", 200)):
+        aim = page.evaluate(AIM_CLICK_JS, below)
+        ok(aim["y0"] == aim["wanted"],
+           f"{engine}: the page scrolls to {label} ({aim['y0']} of {aim['wanted']})")
+        page.evaluate(COUNT_RENDERS_JS)
+        page.mouse.click(aim["x"], aim["y"])
+        page.wait_for_timeout(400)
+        res = page.evaluate(READ_RENDERS_JS)
+        ok(res["renders"] > 0, f"{engine}: clicking another word re-renders the overlay ({label})")
+        ok(res["y1"] == aim["y0"],
+           f"{engine}: the integrity check does not move the page with {label} "
+           f"(moved {res['y1'] - aim['y0']}px)")
+    ok(not any("integrity" in w for w in warnings), f"{engine}: no integrity warnings in a tall textarea")
+
+    # A flex host that grows the textarea: height:0 alone does not collapse
+    # a flex-grown textarea, so the measurement read its box, not its text.
+    page.evaluate("document.querySelector('.mcphee-textarea').style.height = ''")
+    flex = page.add_style_tag(content=
+        ".mcphee-host { display: flex; flex-direction: column; height: 420px; }"
+        " .mcphee-textarea { flex: 1 1 auto; height: auto; }")
+    warnings.clear()
+    set_text_and_settle(page, "the quick brown fox jumps over teh lazy dog.")
+    st = overlay_state(page)
+    ok(st["visibility"] == "visible" and not any("integrity" in w for w in warnings),
+       f"{engine}: integrity holds in a flex host that grows the textarea")
+    flex.evaluate("e => e.remove()")
+
+    # An empty textarea shows its placeholder, which the backdrop does not
+    # render; that is not a misaligned mark.
+    page.evaluate("""() => {
+        document.querySelector('.mcphee-textarea').placeholder =
+            'Describe the scene in as much detail as you like. '.repeat(12);
+    }""")
+    warnings.clear()
+    set_text_and_settle(page, "")
+    st = overlay_state(page)
+    ok(st["visibility"] == "visible" and not any("integrity" in w for w in warnings),
+       f"{engine}: an empty textarea with a long placeholder passes the integrity check")
+    browser.close()
 
 
 def content_matrix():
@@ -707,6 +807,9 @@ def main():
            f"the row's fix applies the majority form ({ta_value()!r})")
 
         browser.close()
+
+        for engine in ("chromium", "firefox"):
+            measurement_checks(p, engine)
     httpd.shutdown()
     print("\n" + (f"{FAILURES} FAILURES" if FAILURES else "ALL PASS"))
     raise SystemExit(1 if FAILURES else 0)

@@ -623,6 +623,25 @@ Linked from [AGENTS.md](../AGENTS.md).
   "the word I'm typing myself at this very moment" as a collapsed caret, so
   a selected word is no longer treated as being typed.
 
+## 2026-11-02 — Clicking into a tall text must not move the page
+
+- Creator, in the image-generation client: "something within the
+  textarea, when it's long, is cuasing an issue where i click into say the
+  2nd part of a taller-than-screen text, and the selection/window/etc
+  jumps up  preventing me from seeing what i want, and editing it. it
+  might be a problem in [the image-generation client] or i t might bein
+  mcphee. fix the issue, either wya, carefully, and deploy the fix
+  tolocal/upstream".
+- Since 3.12.2 the integrity check holds the host's height while it
+  measures, so it does not change the page's layout or scroll position.
+- Agent's findings, not the creator's statements: the check collapsed the
+  textarea to measure its text, and that shortened the page for one
+  layout pass. Firefox then clamped the scroll position whenever the view
+  reached past the textarea's bottom edge, and the position stayed
+  clamped. The client's own caret-reveal code caused a second jump in
+  Chromium; the fix for that is in the client. An empty textarea with a
+  long placeholder also failed the check on every background poll.
+
 ## Earlier standing decisions (recorded 2026-08-02)
 
 - **Double spaces**: exactly two spaces after sentence-ending punctuation

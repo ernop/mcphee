@@ -1,5 +1,26 @@
 # McPhee changelog
 
+## 3.12.2 — 2026-11-02
+
+The integrity check no longer moves the page.
+
+- The check measures the textarea's content height by collapsing it for
+  one layout pass. The collapse also shortened the page. When the view
+  reached past the textarea's bottom edge, the page clamped its scroll
+  position to the shorter content and stayed there. In Firefox every check
+  then scrolled the page up by that distance, so clicking into the lower
+  part of a tall textarea moved the text away from the click. The host now
+  keeps its height during the measurement.
+- A textarea that a flex host grows (`flex: 1`) no longer fails the check.
+  `height: 0` alone does not collapse it, so the measurement also sets
+  `flex: none`.
+- An empty textarea whose placeholder is taller than one line no longer
+  fails the check. Its scrollHeight measured the placeholder, which the
+  backdrop does not render, so the overlay hid itself and re-rendered on
+  every background poll. An empty value has no marks to misplace, and it
+  now passes.
+- The browser suite runs these checks in Chromium and Firefox.
+
 ## 3.12.1 — 2026-10-20
 
 Panel navigation stays where you click.

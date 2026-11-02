@@ -95,7 +95,8 @@ Technical:
     wrap points at fractional widths, hover highlighting, panel section
     order, in-progress-word hiding, panel navigation (hover never scrolls; a
     click selects, centers, and stays), Control-tap correction,
-    first-suggestion alignment, and suggestion acceptance. The library's own integrity
+    first-suggestion alignment, suggestion acceptance, and an integrity
+    check that never moves the page (Chromium and Firefox). The library's own integrity
     self-check is the primary oracle — the tests never do pixel math on
     marks. The one exception is wrap-point parity, which the self-check
     is provably blind to when the line count is unchanged; it is compared

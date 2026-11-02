@@ -309,11 +309,14 @@ follows cSpell's model (word lists union; settings override).
   scrollbar can't skew wrapping.
 - **Overlay correctness is enforced, not assumed**: after every render the
   controller checks that the backdrop's text equals the textarea's value
-  and that both boxes wrapped identically (equal scrollHeights). A failed
+  and that both boxes wrapped identically (equal content heights). A failed
   check triggers one automatic re-mirror + re-render; if it still fails the
   overlay hides itself rather than display misplaced highlights, and keeps
-  retrying in the background until it verifies. Full analysis in DESIGN.md
-  ("Overlay correctness").
+  retrying in the background until it verifies. The check never moves the
+  page: it collapses the textarea for one layout pass to measure its text,
+  and sets `.mcphee-host`'s inline height, min-height, and max-height to
+  its current height until the measurement ends. Full analysis in
+  DESIGN.md ("Overlay correctness").
 - Classification is deliberately heuristic and predictable, not clever:
   anything capitalized/ALLCAPS/camelCase that the dictionary doesn't know is
   "unknown" (blue), on the theory that names and jargon shouldn't nag. A

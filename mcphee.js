@@ -95,7 +95,7 @@
 var McPhee = (function () {
   "use strict";
 
-  var VERSION = "3.12.1";
+  var VERSION = "3.12.2";
 
   var WORD_RE = /[A-Za-z]+(?:['\u2019][A-Za-z]+)*/g;
   var TOKEN_RE = /([A-Za-z]+(?:['\u2019][A-Za-z]+)*)|( {2,})/g;
@@ -1864,25 +1864,52 @@ var McPhee = (function () {
     // scrollHeight to report the real content height whether or not it
     // overflows. Both writes happen inside one layout pass (no paint in
     // between) and scrollTop is put back because shrinking clamps it.
+    // flex:none stops a flex-grown textarea from filling its box again.
     function contentHeight(el) {
       var prevHeight = el.style.height;
       var prevMinHeight = el.style.minHeight;
+      var prevFlex = el.style.flex;
       var prevScrollTop = el.scrollTop;
+      el.style.flex = "none";
       el.style.height = "0px";
       el.style.minHeight = "0px";
       var h = el.scrollHeight;
       el.style.height = prevHeight;
       el.style.minHeight = prevMinHeight;
+      el.style.flex = prevFlex;
       el.scrollTop = prevScrollTop;
       return h;
+    }
+
+    // The host keeps its current height while the textarea is collapsed.
+    // Otherwise the collapse also shortens every ancestor for that layout
+    // pass. A page or scroll container scrolled near the end of its content
+    // then clamps its scroll position to the shorter content, and restoring
+    // the height does not scroll it back, so each check jumps the view up.
+    function contentHeights() {
+      var pinned = getComputedStyle(host).height;
+      var prevHeight = host.style.height;
+      var prevMinHeight = host.style.minHeight;
+      var prevMaxHeight = host.style.maxHeight;
+      host.style.height = pinned;
+      host.style.minHeight = pinned;
+      host.style.maxHeight = pinned;
+      var heights = { backdrop: contentHeight(backdrop), textarea: contentHeight(textarea) };
+      host.style.height = prevHeight;
+      host.style.minHeight = prevMinHeight;
+      host.style.maxHeight = prevMaxHeight;
+      return heights;
     }
 
     function verifyIntegrity() {
       // Reality, not belief: compare against the textarea's LIVE value, never
       // against a variable recording what we think we rendered.
       if (backdrop.textContent !== textarea.value + "\n") return false;
-      if (Math.abs(contentHeight(backdrop) - contentHeight(textarea)) > 2) return false;
-      return true;
+      // An empty value has no marks to misplace. Its scrollHeight measures
+      // the placeholder, which the backdrop does not render.
+      if (!textarea.value) return true;
+      var heights = contentHeights();
+      return Math.abs(heights.backdrop - heights.textarea) <= 2;
     }
 
     function applyVisibility() {
@@ -1932,10 +1959,11 @@ var McPhee = (function () {
         lastRendered = textarea.value;
         lastCaretWord = wordKey;
         if (!ok && !integrityFailed) {
+          var failedHeights = renderError ? null : contentHeights();
           console.warn("McPhee: overlay integrity check failed; hiding highlights rather than showing them misaligned.", renderError || {
             contentParity: backdrop.textContent === textarea.value + "\n",
-            backdropContentHeight: contentHeight(backdrop),
-            textareaContentHeight: contentHeight(textarea),
+            backdropContentHeight: failedHeights.backdrop,
+            textareaContentHeight: failedHeights.textarea,
           });
         }
         integrityFailed = !ok;

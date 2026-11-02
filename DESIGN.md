@@ -241,6 +241,18 @@ After every render these must hold, or the marks are lies:
    height, so short text in a tall textarea — the most common state —
    would accept any wrap divergence, even a completely wrong font.
 
+   The measured element also gets `flex: none`, because `height: 0` alone
+   does not collapse a textarea that a flex host grows. Since 3.12.2 the
+   host holds its current height during the measurement. Before, the
+   collapse shortened every ancestor for that layout pass. A page or
+   scroll container scrolled near the end of its content clamped its
+   scroll position to the shorter content and stayed there after the
+   height came back. In Firefox each check then scrolled the page up
+   whenever the view reached past the textarea's bottom edge. An empty
+   value passes wrap parity without a measurement: it has no marks to
+   misplace, and its scrollHeight measures the placeholder, which the
+   backdrop does not render.
+
    Known blind spot: wrap parity observes the *total content height*, not
    the wrap points themselves. A divergence that moves one word to the
    next line without changing the line count (v3.9.1's sub-pixel width bug
